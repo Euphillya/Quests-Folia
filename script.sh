@@ -22,7 +22,7 @@ reclone_repo() {
 create_patches() {
     cd "$REPO_DIR" || exit
     echo "Création des patches..."
-    git format-patch -o "$PATCHES_DIR" origin/master
+    git format-patch -o "$PATCHES_DIR" origin/main
     echo "Les patches ont été créés dans $PATCHES_DIR"
 }
 
