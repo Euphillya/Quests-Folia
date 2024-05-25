@@ -10,7 +10,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v3
@@ -23,10 +26,25 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    - name: Grant execute permission to script
+    - name: Grant execute permission to script (Linux)
+      if: runner.os == 'Linux'
       run: chmod +x script.sh
 
+    - name: Setup Git for Windows
+      if: runner.os == 'Windows'
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+        git config --global core.symlinks true
+        git config --global core.editor "code --wait"
+
+    - name: Install Git Bash (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: choco install git
+
     - name: Update upstream and apply patches
+      shell: bash
       run: |
         git config --global user.email "action@github.com"
         git config --global user.name "Action Github"
@@ -34,6 +52,7 @@ jobs:
         ./script.sh applyPatches
 
     - name: Build with Maven
+      shell: bash
       run: |
         cd Quests-Patch
         mvn clean compile install
