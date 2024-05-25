@@ -2,7 +2,7 @@
 
 # Définition des chemins
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-REPO_DIR="$SCRIPT_DIR/repo"
+REPO_DIR="$SCRIPT_DIR/Quests-Patch"
 REPO_URL="https://github.com/PikaMug/Quests"
 PATCHES_DIR="$SCRIPT_DIR/patches/core"
 

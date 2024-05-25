@@ -1,0 +1,34 @@
+From 2d62ca339b08dd27dce55c27569b248a3cfd3b5f Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 25 May 2024 20:33:43 +0200
+Subject: [PATCH 07/14] Change Scheduler BukkitZnpcsApiListener
+
+---
+ .../me/pikamug/quests/listeners/BukkitZnpcsApiListener.java   | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java b/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
+index d073eaf20..b5bd2651f 100644
+--- a/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
++++ b/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
+@@ -45,7 +45,7 @@ public class BukkitZnpcsApiListener implements Listener {
+             return;
+         }
+         // Needed because the NpcInteractEvent is fired async
+-        plugin.getServer().getScheduler().runTask(plugin, () -> {
++        event.getPlayer().getScheduler().run(plugin, (task) -> {
+             if (event.getClickType().equals(InteractionType.LEFT_CLICK)) {
+                 if (plugin.getQuestFactory().getSelectingNpcs().contains(event.getPlayer().getUniqueId())) {
+                     if (event.getNpc() == null) {
+@@ -263,7 +263,7 @@ public class BukkitZnpcsApiListener implements Listener {
+                     }
+                 }
+             }
+-        });
++        }, null);
+     }
+ 
+     private String extracted(final Quester quester) {
+-- 
+2.45.1.windows.1
+

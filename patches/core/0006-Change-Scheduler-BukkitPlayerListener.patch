@@ -1,0 +1,98 @@
+From bee769fde82a634ebebfaa00abb807a523f2f3fa Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 25 May 2024 20:33:42 +0200
+Subject: [PATCH 06/14] Change Scheduler BukkitPlayerListener
+
+---
+ .../listeners/BukkitPlayerListener.java       | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java b/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+index 38e9efdd5..1a66c267d 100644
+--- a/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
++++ b/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+@@ -70,6 +70,7 @@ import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.ConcurrentHashMap;
+ import java.util.concurrent.ConcurrentSkipListSet;
++import java.util.concurrent.TimeUnit;
+ 
+ public class BukkitPlayerListener implements Listener {
+ 
+@@ -136,8 +137,8 @@ public class BukkitPlayerListener implements Listener {
+                                     e.printStackTrace();
+                                 }
+                             }
+-                            plugin.getServer().getScheduler().runTaskLater(plugin, () ->
+-                                    event.getWhoClicked().closeInventory(), 1L);
++                            event.getWhoClicked().getScheduler().runDelayed(plugin, (task) ->
++                                    event.getWhoClicked().closeInventory(), null, 1L);
+                             return;
+                         }
+                     }
+@@ -863,7 +864,7 @@ public class BukkitPlayerListener implements Listener {
+         final Player player = event.getPlayer();
+         if (plugin.canUseQuests(player.getUniqueId())) {
+             final Quester quester = plugin.getQuester(player.getUniqueId());
+-            Bukkit.getScheduler().runTaskLater(plugin, quester::findCompassTarget, 10);
++            event.getPlayer().getScheduler().execute(plugin, quester::findCompassTarget, null, 10);
+         }
+     }
+ 
+@@ -886,7 +887,7 @@ public class BukkitPlayerListener implements Listener {
+                 noobCheck.saveData();
+             }
+ 
+-            plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
++            plugin.getServer().getAsyncScheduler().runDelayed(plugin, (task) -> {
+                 final CompletableFuture<Quester> cf = plugin.getStorage().loadQuester(player.getUniqueId());
+                 try {
+                     final Quester quester = cf.get();
+@@ -908,7 +909,7 @@ public class BukkitPlayerListener implements Listener {
+                             quester.startStageTimer(quest);
+                         }
+                     }
+-                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
++                    plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, (task1) -> {
+                         if (quester.hasJournal()) {
+                             quester.updateJournal();
+                         }
+@@ -917,7 +918,7 @@ public class BukkitPlayerListener implements Listener {
+                 } catch (final Exception e) {
+                     e.printStackTrace();
+                 }
+-            }, 20L);
++            }, 20L*50, TimeUnit.MILLISECONDS);
+         }
+     }
+ 
+@@ -984,7 +985,7 @@ public class BukkitPlayerListener implements Listener {
+      * @since 3.8.2
+      */
+     public void playerMove(final UUID uuid, final Location location) {
+-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
++        plugin.getServer().getAsyncScheduler().runNow(plugin, (task) -> {
+             final Quester quester = plugin.getQuester(uuid);
+             if (quester != null) {
+                 if (plugin.canUseQuests(uuid)) {
+@@ -998,7 +999,7 @@ public class BukkitPlayerListener implements Listener {
+                         if (quester.getCurrentQuests().containsKey(quest)) {
+                             if (quester.getCurrentStage(quest) != null
+                                     && quester.getCurrentStage(quest).containsObjective(type)) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> quester
++                                plugin.getServer().getRegionScheduler().run(plugin, location, (task1) -> quester
+                                         .reachLocation(quest, location));
+                             }
+                         }
+@@ -1006,7 +1007,7 @@ public class BukkitPlayerListener implements Listener {
+                         dispatchedQuestIDs.addAll(quester.dispatchMultiplayerEverything(quest, type,
+                                 (final Quester q, final Quest cq) -> {
+                             if (!dispatchedQuestIDs.contains(cq.getId())) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> q
++                                plugin.getServer().getRegionScheduler().run(plugin, location, (task1) -> q
+                                         .reachLocation(cq, location));
+                             }
+                             return null;
+-- 
+2.45.1.windows.1
+

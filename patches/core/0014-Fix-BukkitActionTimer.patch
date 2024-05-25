@@ -1,0 +1,25 @@
+From 7c9f486bcd960cbe6bcf1e46c3c2bfa0901edf1b Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 25 May 2024 20:33:53 +0200
+Subject: [PATCH 14/14] Fix BukkitActionTimer
+
+---
+ .../main/java/me/pikamug/quests/tasks/BukkitActionTimer.java    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+index e4cef134c..9d94c2948 100644
+--- a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
++++ b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+@@ -33,7 +33,7 @@ public class BukkitActionTimer extends FoliaRunnable {
+ 
+     @Override
+     public void run() {
+-        quester.removeTimer(getTaskId());
++        quester.removeTimer(this.getScheduledTask());
+         if (time < 1) {
+             quest.failQuest(quester, false);
+             quester.updateJournal();
+-- 
+2.45.1.windows.1
+

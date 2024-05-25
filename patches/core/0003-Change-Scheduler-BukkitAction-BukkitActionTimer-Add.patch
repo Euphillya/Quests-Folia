@@ -1,0 +1,300 @@
+From 836a514de604c359bb618c7aa6fbfb8c0b00dd67 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 25 May 2024 20:33:37 +0200
+Subject: [PATCH 03/14] Change Scheduler BukkitAction BukkitActionTimer Add
+
+---
+ .../me/pikamug/quests/player/Quester.java     |   3 +-
+ .../quests/schedulers/FoliaRunnable.java      | 197 ++++++++++++++++++
+ .../pikamug/quests/actions/BukkitAction.java  |   9 +-
+ .../quests/tasks/BukkitActionTimer.java       |   4 +-
+ 4 files changed, 207 insertions(+), 6 deletions(-)
+ create mode 100644 api/src/main/java/me/pikamug/quests/schedulers/FoliaRunnable.java
+
+diff --git a/api/src/main/java/me/pikamug/quests/player/Quester.java b/api/src/main/java/me/pikamug/quests/player/Quester.java
+index 2f2eac3d3..5ed993a57 100644
+--- a/api/src/main/java/me/pikamug/quests/player/Quester.java
++++ b/api/src/main/java/me/pikamug/quests/player/Quester.java
+@@ -10,6 +10,7 @@
+ 
+ package me.pikamug.quests.player;
+ 
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+ import me.pikamug.quests.quests.Quest;
+ import me.pikamug.quests.quests.components.Stage;
+ import me.pikamug.quests.quests.components.Objective;
+@@ -70,7 +71,7 @@ public interface Quester extends Comparable<Quester> {
+      */
+     void setCompassTarget(final Quest quest);
+ 
+-    ConcurrentHashMap<Integer, Quest> getTimers();
++    ConcurrentHashMap<ScheduledTask, Quest> getTimers();
+ 
+     void setTimers(final ConcurrentHashMap<Integer, Quest> timers);
+ 
+diff --git a/api/src/main/java/me/pikamug/quests/schedulers/FoliaRunnable.java b/api/src/main/java/me/pikamug/quests/schedulers/FoliaRunnable.java
+new file mode 100644
+index 000000000..02ed5c4ed
+--- /dev/null
++++ b/api/src/main/java/me/pikamug/quests/schedulers/FoliaRunnable.java
+@@ -0,0 +1,197 @@
++package me.pikamug.quests.schedulers;
++
++import io.papermc.paper.threadedregions.scheduler.*;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.entity.Entity;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.concurrent.TimeUnit;
++
++public abstract class FoliaRunnable implements Runnable {
++
++    private ScheduledTask task;
++    private @Nullable AsyncScheduler asyncScheduler;
++    private @Nullable TimeUnit timeUnit;
++    private @Nullable EntityScheduler entityScheduler;
++    private @Nullable Runnable entityRetired;
++    private @Nullable GlobalRegionScheduler globalRegionScheduler;
++    private @Nullable RegionScheduler regionScheduler;
++    private @Nullable Location location;
++    private @Nullable World world;
++    private int chunkX;
++    private int chunkZ;
++
++
++    public FoliaRunnable(@NotNull AsyncScheduler scheduler, @Nullable TimeUnit timeUnit) {
++        this.asyncScheduler = scheduler;
++        this.timeUnit = timeUnit;
++    }
++
++    public FoliaRunnable(@NotNull Entity entity, @Nullable Runnable retired) {
++        this.entityScheduler = entity.getScheduler();
++        this.entityRetired = retired;
++    }
++
++    public FoliaRunnable(@NotNull EntityScheduler scheduler, @Nullable Runnable retired) {
++        this.entityScheduler = scheduler;
++        this.entityRetired = retired;
++    }
++
++    public FoliaRunnable(@NotNull GlobalRegionScheduler scheduler) {
++        this.globalRegionScheduler = scheduler;
++    }
++
++    public FoliaRunnable(@Nullable Location location) {
++        this.regionScheduler = Bukkit.getRegionScheduler();
++        this.location = location;
++    }
++
++    public FoliaRunnable(@Nullable World world, int chunkX, int chunkZ) {
++        this.regionScheduler = Bukkit.getRegionScheduler();
++        this.world = world;
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++    }
++
++    public boolean isCancelled() throws IllegalStateException {
++        checkScheduled();
++
++        return task.isCancelled();
++    }
++
++    public void cancel() throws IllegalStateException {
++        task.cancel();
++    }
++
++    @NotNull
++    public ScheduledTask run(@NotNull Plugin plugin) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.run(plugin, scheduledTask -> this.run()));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.run(plugin, scheduledTask -> this.run(), entityRetired));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.run(plugin, location, scheduledTask -> this.run()));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.run(plugin, world, chunkX, chunkZ, scheduledTask -> this.run()));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null){
++            return setupTask(this.asyncScheduler.runNow(plugin, scheduledTask -> this.run()));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to run after the specified number of server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public ScheduledTask runDelayed(@NotNull Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runDelayed(plugin, scheduledTask -> this.run(), entityRetired, delay));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.runDelayed(plugin, location, scheduledTask -> this.run(), delay));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.runDelayed(plugin, world, chunkX, chunkZ, scheduledTask -> this.run(), delay));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay, timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to repeatedly run until cancelled, starting after the
++     * specified number of server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task
++     * @param period the ticks to wait between runs
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public ScheduledTask runAtFixedRate(@NotNull Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++        period = Math.max(1, period);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), entityRetired, delay, period));
++        } else if (this.regionScheduler != null) {
++            if (this.location != null) {
++                return setupTask(this.regionScheduler.runAtFixedRate(plugin, location, scheduledTask -> this.run(), delay, period));
++            } else if (world != null) {
++                return setupTask(this.regionScheduler.runAtFixedRate(plugin, world, chunkX, chunkZ, scheduledTask -> this.run(), delay, period));
++            } else {
++                throw new UnsupportedOperationException("The region type is not supported.");
++            }
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period, timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Gets the task id for this runnable.
++     *
++     * @return the task id that this runnable was scheduled as
++     * @throws IllegalStateException if task was not scheduled yet
++     */
++    public int getTaskId() throws IllegalStateException {
++        checkScheduled();
++
++        return task.hashCode();
++    }
++
++    private void checkScheduled() {
++        if (task == null) {
++            throw new IllegalStateException("Not scheduled yet");
++        }
++    }
++
++    private void checkNotYetScheduled() {
++        if (task != null) {
++            throw new IllegalStateException("Already scheduled as " + task.hashCode());
++        }
++    }
++
++    @NotNull
++    private ScheduledTask setupTask(final ScheduledTask task) {
++        this.task = task;
++        return task;
++    }
++
++    public ScheduledTask getScheduledTask() {
++        return this.task;
++    }
++}
+\ No newline at end of file
+diff --git a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index c766295cc..ff5c5b380 100644
+--- a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -10,6 +10,7 @@
+ 
+ package me.pikamug.quests.actions;
+ 
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+ import me.pikamug.quests.BukkitQuestsPlugin;
+ import me.pikamug.quests.entity.QuestMob;
+ import me.pikamug.quests.player.Quester;
+@@ -406,16 +407,16 @@ public class BukkitAction implements Action {
+             for (final int seconds : toNotify) {
+                 if (timer > seconds) {
+                     quester.getTimers().put(new BukkitActionTimer(quester, quest, seconds)
+-                            .runTaskLater(plugin, (timer - seconds) * 20L).getTaskId(), quest);
++                            .runDelayed(plugin, (timer - seconds) * 20L), quest);
+                 }
+             }
+             quester.getTimers().put(new BukkitActionTimer(quester, quest, 0)
+-                    .runTaskLater(plugin, timer * 20L).getTaskId(), quest);
++                    .runDelayed(plugin, timer * 20L), quest);
+         }
+         if (cancelTimer) {
+-            for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++            for (final Map.Entry<ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+                 if (entry.getValue().getId().equals(quest.getId())) {
+-                    plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                    entry.getKey().cancel();
+                     quester.getTimers().remove(entry.getKey());
+                 }
+             }
+diff --git a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+index b086377d6..e4cef134c 100644
+--- a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
++++ b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+@@ -12,18 +12,20 @@ package me.pikamug.quests.tasks;
+ 
+ import me.pikamug.quests.quests.Quest;
+ import me.pikamug.quests.player.Quester;
++import me.pikamug.quests.schedulers.FoliaRunnable;
+ import me.pikamug.quests.util.BukkitLang;
+ import me.pikamug.quests.util.BukkitMiscUtil;
+ import org.bukkit.ChatColor;
+ import org.bukkit.scheduler.BukkitRunnable;
+ 
+-public class BukkitActionTimer extends BukkitRunnable {
++public class BukkitActionTimer extends FoliaRunnable {
+ 
+     private final Quester quester;
+     private final Quest quest;
+     private final int time;
+ 
+     public BukkitActionTimer(final Quester quester, final Quest quest, final int time) {
++        super(quester.getPlayer(), null);
+         this.quester = quester;
+         this.quest = quest;
+         this.time = time;
+-- 
+2.45.1.windows.1
+

@@ -1,0 +1,25 @@
+From 1ad41f6094a95187edcaf2ed904ada49e5c2db81 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 25 May 2024 20:33:51 +0200
+Subject: [PATCH 12/14] Change teleport to teleportAsync
+
+---
+ core/src/main/java/me/pikamug/quests/actions/BukkitAction.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index ff5c5b380..cff3d66cd 100644
+--- a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -384,7 +384,7 @@ public class BukkitAction implements Action {
+                 plugin.getLogger().warning("Tried to fire Action " + name + " but player " + player.getUniqueId()
+                 + " was dead (known Bukkit limitation).");
+             } else {
+-                player.teleport(teleport);
++                player.teleportAsync(teleport);
+             }
+         }
+         if (book != null) {
+-- 
+2.45.1.windows.1
+
