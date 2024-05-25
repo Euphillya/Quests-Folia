@@ -1,0 +1,43 @@
+name: Build and Upload Jar
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Grant execute permission to script
+      run: chmod +x script.sh
+
+    - name: Update upstream and apply patches
+      run: |
+        ./script.sh updateUpstream
+        ./script.sh applyPatches
+
+    - name: Build with Maven
+      run: |
+        cd repo
+        mvn clean compile install
+
+    - name: Upload Jar file
+      uses: actions/upload-artifact@v3
+      with:
+        name: compiled-jar
+        path: Quests-Patch/dist/target/*.jar
