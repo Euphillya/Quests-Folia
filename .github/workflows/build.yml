@@ -28,6 +28,8 @@ jobs:
 
     - name: Update upstream and apply patches
       run: |
+        git config --global user.email "action@github.com"
+        git config --global user.name "Action Github"
         ./script.sh updateUpstream
         ./script.sh applyPatches
 
