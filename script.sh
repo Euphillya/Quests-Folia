@@ -32,10 +32,12 @@ apply_patches() {
     echo "Application des patches..."
     for patch in "$PATCHES_DIR"/*.patch; do
         git apply "$patch"
-        patch_name=$(basename "$patch")
+        patch_name=$(basename "$patch" .patch)
+        patch_description=$(echo "$patch_name" | sed 's/^[0-9]*-//')
+        patch_description=$(echo "$patch_description" | sed 's/-/ /g')
         git add .
-        git commit -m $patch
-        echo "Patch $patch_name appliqué."
+        git commit -m "$patch_description"
+        echo "Patch \"$patch_description\" appliqué."
     done
 }
 

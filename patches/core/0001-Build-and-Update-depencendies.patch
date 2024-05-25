@@ -1,6 +1,6 @@
-From 6e498987f40ffaee68170e5344070a353a480f1a Mon Sep 17 00:00:00 2001
+From 49e112da8ef69553e5a583431e8abdfbc6d19907 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Fri, 10 May 2024 13:00:28 +0200
+Date: Sat, 25 May 2024 18:08:59 +0200
 Subject: [PATCH] Build and Update depencendies
 
 ---
@@ -86,7 +86,7 @@ index e8629409c..d65245f75 100644
                      <execution>
                          <phase>package</phase>
 diff --git a/core/pom.xml b/core/pom.xml
-index 766fc1dbd..73fa2c9ad 100644
+index eeb8d9ad7..748a9e9d6 100644
 --- a/core/pom.xml
 +++ b/core/pom.xml
 @@ -70,13 +70,17 @@
@@ -191,7 +191,7 @@ index 16dea506c..a76b7d031 100644
  }
  
 diff --git a/core/src/main/java/me/pikamug/quests/util/BukkitItemUtil.java b/core/src/main/java/me/pikamug/quests/util/BukkitItemUtil.java
-index bd98f98ab..23705381a 100644
+index 3f62e2adc..12e1671d9 100644
 --- a/core/src/main/java/me/pikamug/quests/util/BukkitItemUtil.java
 +++ b/core/src/main/java/me/pikamug/quests/util/BukkitItemUtil.java
 @@ -178,11 +178,13 @@ public class BukkitItemUtil {
@@ -211,7 +211,7 @@ index bd98f98ab..23705381a 100644
          }
          if (!one.getEnchantments().equals(two.getEnchantments())) {
 diff --git a/core/src/main/java/me/pikamug/quests/util/BukkitLang.java b/core/src/main/java/me/pikamug/quests/util/BukkitLang.java
-index f9590fd06..37cfa6e22 100644
+index 7b0456854..19b8a7d04 100644
 --- a/core/src/main/java/me/pikamug/quests/util/BukkitLang.java
 +++ b/core/src/main/java/me/pikamug/quests/util/BukkitLang.java
 @@ -68,11 +68,11 @@ public class BukkitLang {
@@ -262,7 +262,7 @@ index 5f0edb02b..f4163ff02 100644
              <groupId>me.pikamug.quests</groupId>
              <artifactId>quests-core</artifactId>
 diff --git a/pom.xml b/pom.xml
-index 4dda337a9..078879f46 100644
+index 1df88e77c..561b5c46e 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -13,9 +13,9 @@
@@ -298,5 +298,5 @@ index 4dda337a9..078879f46 100644
                      <updatePomFile>true</updatePomFile>
                      <flattenMode>resolveCiFriendliesOnly</flattenMode>
 -- 
-2.44.0.windows.1
+2.45.1.windows.1
 
