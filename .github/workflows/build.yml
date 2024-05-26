@@ -10,10 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest]
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -26,22 +23,8 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    - name: Grant execute permission to script (Linux)
-      if: runner.os == 'Linux'
-      run: chmod +x script.sh
-
-    - name: Setup Git for Windows
-      if: runner.os == 'Windows'
-      run: |
-        git config --global core.autocrlf false
-        git config --global core.eol lf
-        git config --global core.symlinks true
-        git config --global core.editor "code --wait"
-
-    - name: Install Git Bash (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: choco install git
+    - name: Grant execute permission to script
+      run: bash -c "chmod +x script.sh"
 
     - name: Update upstream and apply patches
       shell: bash
