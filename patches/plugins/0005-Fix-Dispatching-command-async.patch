@@ -1,0 +1,32 @@
+From 014678085693bd6175196d6bd41658688a8daaaf Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 14 Aug 2024 10:43:32 +0200
+Subject: [PATCH 5/6] Fix Dispatching command async
+
+---
+ core/src/main/java/me/pikamug/quests/player/BukkitQuester.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+index 7095074d6..270c3d91b 100644
+--- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
++++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+@@ -1577,6 +1577,7 @@ public class BukkitQuester implements Quester {
+      * @param ignoreOverrides Whether to ignore objective-overrides
+      */
+     public void showCurrentObjectives(final Quest quest, final Quester quester, final boolean ignoreOverrides) {
++        quester.getPlayer().getScheduler().run(plugin, scheduledTask -> {
+         if (quest == null) {
+             plugin.getLogger().severe("Quest was null when showing objectives for " + quester.getLastKnownName());
+             return;
+@@ -1676,6 +1677,7 @@ public class BukkitQuester implements Quester {
+                 }
+             }
+         }
++        }, null);
+     }
+ 
+     /**
+-- 
+2.45.1.windows.1
+

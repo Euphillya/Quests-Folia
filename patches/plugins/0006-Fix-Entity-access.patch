@@ -1,0 +1,179 @@
+From 2a017b24a528883adfdd4c56f9291c1d382307ad Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 14 Aug 2024 11:06:00 +0200
+Subject: [PATCH 6/6] Fix Entity access
+
+---
+ .../me/pikamug/quests/quests/BukkitQuest.java | 91 ++++++++++---------
+ 1 file changed, 46 insertions(+), 45 deletions(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+index 6a9ecefbb..543b6a0d0 100644
+--- a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
++++ b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+@@ -441,108 +441,109 @@ public class BukkitQuest implements Quest {
+                     return;
+                 }
+                 final Location source = quester.getPlayer().getLocation();
+-                Location nearest = null;
+-                double old_distance = 30000000;
++                java.util.concurrent.atomic.AtomicReference<Location> nearest = new java.util.concurrent.atomic.AtomicReference<>();
++                java.util.concurrent.atomic.AtomicReference<Double> old_distance = new java.util.concurrent.atomic.AtomicReference<>((double) 30000000);
+                 if (source.getWorld() == null) {
+                     return;
+                 }
+-                for (final Player p : source.getWorld().getPlayers()) {
++                for (final Player p : source.getWorld().getPlayers()) { p.getScheduler().run(plugin, scheduledTask -> {
+                     if (p.getUniqueId().equals(quester.getUUID())) {
+-                        continue;
++                        return;
+                     }
+                     final double new_distance = p.getLocation().distanceSquared(source);
+-                    if (new_distance < old_distance) {
+-                        nearest = p.getLocation();
+-                        old_distance = new_distance;
++                    if (new_distance < old_distance.get()) {
++                        nearest.set(p.getLocation());
++                        old_distance.set(new_distance);
+                     }
+-                }
+-                if (nearest != null) {
+-                    targetLocation = nearest;
++                }, null);}
++                if (nearest.get() != null) {
++                    targetLocation = nearest.get();
+                 }
+             } else if (stage.getMobsToKill() != null && stage.getMobsToKill().size() > 0) {
+                 if (quester.getPlayer() == null) {
+                     return;
+                 }
+                 final Location source = quester.getPlayer().getLocation();
+-                Location nearest = null;
+-                double old_distance = 30000000;
++                java.util.concurrent.atomic.AtomicReference<Location> nearest = new java.util.concurrent.atomic.AtomicReference<>();
++                java.util.concurrent.atomic.AtomicReference<Double> old_distance = new java.util.concurrent.atomic.AtomicReference<>((double) 30000000);
+                 final EntityType et = (EntityType) stage.getMobsToKill().getFirst();
+                 if (source.getWorld() == null) {
+                     return;
+                 }
+-                for (final Entity e : source.getWorld().getEntities()) {
++                for (final Entity e : source.getWorld().getEntities()) {e.getScheduler().run(plugin, scheduledTask -> {
+                     if (!e.getType().equals(et)) {
+-                        continue;
++                         return;
+                     }
+                     final double new_distance = e.getLocation().distanceSquared(source);
+-                    if (new_distance < old_distance) {
+-                        nearest = e.getLocation();
+-                        old_distance = new_distance;
++                    if (new_distance < old_distance.get()) {
++                        nearest.set(e.getLocation());
++                        old_distance.set(new_distance);
+                     }
+-                }
+-                if (nearest != null) {
+-                    targetLocation = nearest;
++                }, null);}
++                if (nearest.get() != null) {
++                    targetLocation = nearest.get();
+                 }
+             } else if (stage.getMobsToTame() != null && stage.getMobsToTame().size() > 0) {
+                 if (quester.getPlayer() == null) {
+                     return;
+                 }
+                 final Location source = quester.getPlayer().getLocation();
+-                Location nearest = null;
+-                double old_distance = 30000000;
++                java.util.concurrent.atomic.AtomicReference<Location> nearest = new java.util.concurrent.atomic.AtomicReference<>();
++                java.util.concurrent.atomic.AtomicReference<Double> old_distance = new java.util.concurrent.atomic.AtomicReference<>((double) 30000000);
+                 final EntityType et = (EntityType) stage.getMobsToTame().getFirst();
+                 if (source.getWorld() == null) {
+                     return;
+                 }
+-                for (final Entity e : source.getWorld().getEntities()) {
++                for (final Entity e : source.getWorld().getEntities()) {e.getScheduler().run(plugin, scheduledTask -> {
+                     if (!e.getType().equals(et)) {
+-                        continue;
++                        return;
+                     }
+                     final double new_distance = e.getLocation().distanceSquared(source);
+-                    if (new_distance < old_distance) {
+-                        nearest = e.getLocation();
+-                        old_distance = new_distance;
++                    if (new_distance < old_distance.get()) {
++                        nearest.set(e.getLocation());
++                        old_distance.set(new_distance);
+                     }
+-                }
+-                if (nearest != null) {
+-                    targetLocation = nearest;
++                }, null);}
++                if (nearest.get() != null) {
++                    targetLocation = nearest.get();
+                 }
+             } else if (stage.getSheepToShear() != null && stage.getSheepToShear().size() > 0) {
+                 if (quester.getPlayer() == null) {
+                     return;
+                 }
+                 final Location source = quester.getPlayer().getLocation();
+-                Location nearest = null;
+-                double old_distance = 30000000;
++                java.util.concurrent.atomic.AtomicReference<Location> nearest = new java.util.concurrent.atomic.AtomicReference<>();
++                java.util.concurrent.atomic.AtomicReference<Double> old_distance = new java.util.concurrent.atomic.AtomicReference<>((double) 30000000);
+                 final DyeColor dc = (DyeColor) stage.getSheepToShear().getFirst();
+                 if (source.getWorld() == null) {
+                     return;
+                 }
+-                for (final Entity e : source.getWorld().getEntities()) {
++                for (final Entity e : source.getWorld().getEntities()) {e.getScheduler().run(plugin, scheduledTask -> {
+                     if (!e.getType().equals(EntityType.SHEEP)) {
+-                        continue;
++                        return;
+                     }
+                     final Sheep s = (Sheep)e;
+                     if (s.getColor()!= null && s.getColor().equals(dc)) {
+-                        continue;
++                        return;
+                     }
+                     final double new_distance = e.getLocation().distanceSquared(source);
+-                    if (new_distance < old_distance) {
+-                        nearest = e.getLocation();
+-                        old_distance = new_distance;
++                    if (new_distance < old_distance.get()) {
++                        nearest.set(e.getLocation());
++                        old_distance.set(new_distance);
+                     }
+-                }
+-                if (nearest != null) {
+-                    targetLocation = nearest;
++                }, null);}
++                if (nearest.get() != null) {
++                    targetLocation = nearest.get();
+                 }
+             }
+             if (targetLocation != null && targetLocation.getWorld() != null) {
+                 if (quester.getPlayer() == null) {
+                     return;
+                 }
+-                if (targetLocation.getWorld().getName().equals(quester.getPlayer().getWorld().getName())) {
+-                    final Location lockedTarget = new Location(targetLocation.getWorld(), targetLocation.getX(),
+-                            targetLocation.getY(), targetLocation.getZ());
++                Location finalTargetLocation = targetLocation;
++                if (finalTargetLocation.getWorld().getName().equals(quester.getPlayer().getWorld().getName())) {quester.getPlayer().getScheduler().run(plugin, scheduledTask -> {
++                    final Location lockedTarget = new Location(finalTargetLocation.getWorld(), finalTargetLocation.getX(),
++                            finalTargetLocation.getY(), finalTargetLocation.getZ());
+                     final QuestUpdateCompassEvent event = new QuestUpdateCompassEvent(quest, quester, lockedTarget);
+                     plugin.getServer().getPluginManager().callEvent(event);
+                     if (event.isCancelled()) {
+@@ -550,7 +551,7 @@ public class BukkitQuest implements Quest {
+                     }
+                     quester.setCompassTarget(this);
+                     quester.getPlayer().setCompassTarget(lockedTarget);
+-                }
++                }, null); }
+             }
+         });
+         return true;
+-- 
+2.45.1.windows.1
+

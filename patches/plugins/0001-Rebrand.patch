@@ -1,0 +1,190 @@
+From 3c55d19325bd266181fad9e0538197f9b1b116fc Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 14 Aug 2024 10:37:27 +0200
+Subject: [PATCH 1/6] Rebrand
+
+---
+ api/pom.xml  | 22 +++++++++++++---------
+ core/pom.xml | 20 ++++++++++++--------
+ dist/pom.xml |  6 +++---
+ pom.xml      |  8 ++++----
+ 4 files changed, 32 insertions(+), 24 deletions(-)
+
+diff --git a/api/pom.xml b/api/pom.xml
+index e8629409c..e472c73f9 100644
+--- a/api/pom.xml
++++ b/api/pom.xml
+@@ -19,13 +19,17 @@
+             <id>spigot-repo</id>
+             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+         </repository>
++        <repository>
++            <id>papermc</id>
++            <url>https://repo.papermc.io/repository/maven-public/</url>
++        </repository>
+     </repositories>
+     
+     <dependencies>
+         <dependency>
+-            <groupId>org.spigotmc</groupId>
+-            <artifactId>spigot-api</artifactId>
+-            <version>1.13.2-R0.1-SNAPSHOT</version>
++            <groupId>dev.folia</groupId>
++            <artifactId>folia-api</artifactId>
++            <version>1.20.6-R0.1-SNAPSHOT</version>
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+@@ -48,7 +52,7 @@
+             <groupId>com.zaxxer</groupId>
+             <artifactId>HikariCP</artifactId>
+             <!-- Do not update until Java 11 is min -->
+-            <version>4.0.3</version>
++            <version>5.1.0</version>
+             <exclusions>
+                 <exclusion>
+                     <artifactId>slf4j-api</artifactId>
+@@ -66,23 +70,23 @@
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-compiler-plugin</artifactId>
+-                <version>3.10.1</version>
++                <version>3.13.0</version>
+                 <configuration>
+-                    <source>1.8</source>
+-                    <target>1.8</target>
++                    <source>17</source>
++                    <target>17</target>
+                 </configuration>
+             </plugin>
+ 
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-jar-plugin</artifactId>
+-                <version>3.2.0</version>
++                <version>3.4.1</version>
+             </plugin>
+ 
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-shade-plugin</artifactId>
+-                <version>3.2.4</version>
++                <version>3.5.3</version>
+                 <executions>
+                     <execution>
+                         <phase>package</phase>
+diff --git a/core/pom.xml b/core/pom.xml
+index 236dd4f5f..174da418d 100644
+--- a/core/pom.xml
++++ b/core/pom.xml
+@@ -70,13 +70,17 @@
+             <name>Pyr's Repo</name>
+             <url>https://repo.pyr.lol/snapshots</url>
+         </repository>
++        <repository>
++            <id>papermc</id>
++            <url>https://repo.papermc.io/repository/maven-public/</url>
++        </repository>
+     </repositories>
+ 
+     <dependencies>
+         <dependency>
+-            <groupId>org.spigotmc</groupId>
+-            <artifactId>spigot-api</artifactId>
+-            <version>1.19.4-R0.1-SNAPSHOT</version>
++            <groupId>dev.folia</groupId>
++            <artifactId>folia-api</artifactId>
++            <version>1.20.6-R0.1-SNAPSHOT</version>
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+@@ -230,23 +234,23 @@
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-compiler-plugin</artifactId>
+-                <version>3.10.1</version>
++                <version>3.13.0</version>
+                 <configuration>
+-                    <source>1.8</source>
+-                    <target>1.8</target>
++                    <source>17</source>
++                    <target>17</target>
+                 </configuration>
+             </plugin>
+ 
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-jar-plugin</artifactId>
+-                <version>3.2.0</version>
++                <version>3.4.1</version>
+             </plugin>
+ 
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-shade-plugin</artifactId>
+-                <version>3.2.4</version>
++                <version>3.5.3</version>
+                 <executions>
+                     <execution>
+                         <phase>package</phase>
+diff --git a/dist/pom.xml b/dist/pom.xml
+index 5f0edb02b..f4163ff02 100644
+--- a/dist/pom.xml
++++ b/dist/pom.xml
+@@ -24,7 +24,7 @@
+                     <finalName>Quests-${project.version}</finalName>
+                     <appendAssemblyId>false</appendAssemblyId>
+                 </configuration>
+-                <version>3.3.0</version>
++                <version>3.7.1</version>
+                 <executions>
+                     <execution>
+                         <id>package-all</id>
+@@ -50,7 +50,7 @@
+             <artifactId>quests-api</artifactId>
+             <version>${revision}</version>
+         </dependency>
+-        <dependency>
++        <!--dependency>
+             <groupId>me.pikamug.quests</groupId>
+             <artifactId>quests-v1_8_R3</artifactId>
+             <version>${revision}</version>
+@@ -64,7 +64,7 @@
+             <groupId>me.pikamug.quests</groupId>
+             <artifactId>quests-v1_8_R1</artifactId>
+             <version>${revision}</version>
+-        </dependency>
++        </dependency-->
+         <dependency>
+             <groupId>me.pikamug.quests</groupId>
+             <artifactId>quests-core</artifactId>
+diff --git a/pom.xml b/pom.xml
+index bbe24349e..ae611fcc0 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -13,9 +13,9 @@
+ 
+     <modules>
+         <module>api</module>
+-        <module>v1_8_R1</module>
++        <!--module>v1_8_R1</module>
+         <module>v1_8_R2</module>
+-        <module>v1_8_R3</module>
++        <module>v1_8_R3</module-->
+         <module>core</module>
+         <module>dist</module>
+     </modules>
+@@ -25,8 +25,8 @@
+         <updatePomFile>true</updatePomFile>
+         <flattenMode>resolveCiFriendliesOnly</flattenMode>
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-        <maven.compiler.source>1.8</maven.compiler.source>
+-        <maven.compiler.target>1.8</maven.compiler.target>
++        <maven.compiler.source>17</maven.compiler.source>
++        <maven.compiler.target>17</maven.compiler.target>
+     </properties>
+ 
+     <repositories>
+-- 
+2.45.1.windows.1
+

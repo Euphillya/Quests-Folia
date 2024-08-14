@@ -2,33 +2,39 @@
 
 # Définition des chemins
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-REPO_DIR="$SCRIPT_DIR/Quests-Patch"
+REPO_DIR="$SCRIPT_DIR/Quests"
+REPO_DIR_PATCH="$SCRIPT_DIR/Quests-Patchs"
 REPO_URL="https://github.com/PikaMug/Quests"
-PATCHES_DIR="$SCRIPT_DIR/patches/core"
+PATCHES_DIR="$SCRIPT_DIR/patches/plugins"
+BRANCH_GIT="main"
 
 # S'assurer que le répertoire des patches existe
 mkdir -p "$PATCHES_DIR"
 
 # Fonction pour recloner le dépôt
 reclone_repo() {
-    echo "Suppression du dépôt local..."
+    echo "Suppression des dépôts locaux..."
     rm -rf "$REPO_DIR"
+    rm -rf "$REPO_DIR_PATCH"
     echo "Clonage du dépôt..."
-    git clone "$REPO_URL" "$REPO_DIR"
+    git clone "$REPO_URL" "$REPO_DIR" -b "$BRANCH_GIT"
     echo "Le dépôt a été recloné."
+    echo "Début de la copie du code"
+    cp -r "$REPO_DIR" "$REPO_DIR_PATCH"
+    echo "Les patches peuvent être appliqués"
 }
 
 # Fonction pour créer des patches
 create_patches() {
-    cd "$REPO_DIR" || exit
+    cd "$REPO_DIR_PATCH" || exit
     echo "Création des patches..."
-    git format-patch -o "$PATCHES_DIR" origin/main
-    echo "Les patches ont été créés dans $PATCHES_DIR"
+    git format-patch -o "$PATCHES_DIR" origin/$BRANCH_GIT
+    echo "Les patches ont été créés dans $REPO_DIR_PATCH"
 }
 
 # Fonction pour appliquer des patches
 apply_patches() {
-    cd "$REPO_DIR" || exit
+    cd "$REPO_DIR_PATCH" || exit
     echo "Application des patches..."
     for patch in "$PATCHES_DIR"/*.patch; do
         git apply "$patch"

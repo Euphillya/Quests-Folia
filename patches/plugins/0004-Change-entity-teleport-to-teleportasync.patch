@@ -1,0 +1,25 @@
+From 182103472f8cb6de6f311cdf38fa22e489925cf1 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 14 Aug 2024 10:37:29 +0200
+Subject: [PATCH 4/6] Change entity teleport to teleportasync
+
+---
+ core/src/main/java/me/pikamug/quests/actions/BukkitAction.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index 3ae9832fe..52721f6f4 100644
+--- a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -389,7 +389,7 @@ public class BukkitAction implements Action {
+                 plugin.getLogger().warning("Tried to fire Action " + name + " but player " + player.getUniqueId()
+                 + " was dead (known Bukkit limitation).");
+             } else {
+-                player.teleport(teleport);
++                player.teleportAsync(teleport);
+             }
+         }
+         if (book != null) {
+-- 
+2.45.1.windows.1
+

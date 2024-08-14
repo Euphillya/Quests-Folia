@@ -1,0 +1,834 @@
+From 9fbbf9160fca5ed1818687b5e7e0c7951e791da2 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Wed, 14 Aug 2024 10:37:28 +0200
+Subject: [PATCH 3/6] Change Bukkit Scheduler to Folia
+
+---
+ .../me/pikamug/quests/player/Quester.java     |   6 +-
+ .../me/pikamug/quests/util/FoliaRunnable.java | 276 ++++++++++++++++++
+ .../me/pikamug/quests/BukkitQuestsPlugin.java |  15 +-
+ .../pikamug/quests/actions/BukkitAction.java  |   8 +-
+ .../quest/BukkitQuestCommandHandler.java      |   8 +-
+ .../subcommands/BukkitQuestsTopCommand.java   |   2 +-
+ .../dependencies/BukkitDependencies.java      |  10 +-
+ .../listeners/BukkitPlayerListener.java       |  22 +-
+ .../listeners/BukkitZnpcsApiListener.java     |   4 +-
+ .../pikamug/quests/player/BukkitQuester.java  |  30 +-
+ .../me/pikamug/quests/quests/BukkitQuest.java |  18 +-
+ .../quests/statistics/BukkitMetrics.java      |   2 +-
+ .../quests/tasks/BukkitActionTimer.java       |   5 +-
+ .../quests/util/BukkitUpdateChecker.java      |   2 +-
+ 14 files changed, 345 insertions(+), 63 deletions(-)
+ create mode 100644 api/src/main/java/me/pikamug/quests/util/FoliaRunnable.java
+
+diff --git a/api/src/main/java/me/pikamug/quests/player/Quester.java b/api/src/main/java/me/pikamug/quests/player/Quester.java
+index 905b500bf..0f1510dce 100644
+--- a/api/src/main/java/me/pikamug/quests/player/Quester.java
++++ b/api/src/main/java/me/pikamug/quests/player/Quester.java
+@@ -71,11 +71,11 @@ public interface Quester extends Comparable<Quester> {
+      */
+     void setCompassTarget(final Quest quest);
+ 
+-    ConcurrentHashMap<Integer, Quest> getTimers();
++    ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> getTimers();
+ 
+-    void setTimers(final ConcurrentHashMap<Integer, Quest> timers);
++    void setTimers(final ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers);
+ 
+-    void removeTimer(final Integer timerId);
++    void removeTimer(final io.papermc.paper.threadedregions.scheduler.ScheduledTask timerId);
+ 
+     ConcurrentHashMap<Quest, Integer> getCurrentQuests();
+ 
+diff --git a/api/src/main/java/me/pikamug/quests/util/FoliaRunnable.java b/api/src/main/java/me/pikamug/quests/util/FoliaRunnable.java
+new file mode 100644
+index 000000000..f8d8a4d3a
+--- /dev/null
++++ b/api/src/main/java/me/pikamug/quests/util/FoliaRunnable.java
+@@ -0,0 +1,276 @@
++package me.pikamug.quests.util;
++
++
++import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
++import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
++import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
++import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import java.util.concurrent.TimeUnit;
++
++/**
++ * A runnable class with both Paper and Folia Support.
++ *
++ * @author Euphyllia
++ * @version 1.9
++ * @since 1.0
++ */
++public abstract class FoliaRunnable implements Runnable {
++
++    private ScheduledTask task;
++    private @Nullable AsyncScheduler asyncScheduler;
++    private @Nullable TimeUnit timeUnit;
++    private @Nullable EntityScheduler entityScheduler;
++    private @Nullable Runnable entityRetired;
++    private @Nullable GlobalRegionScheduler globalRegionScheduler;
++    private @Nullable RegionScheduler regionScheduler;
++    private World world;
++    private int chunkX;
++    private int chunkZ;
++
++    /**
++     * A constructor to build an {@link AsyncScheduler} with a {@link TimeUnit}.
++     *
++     * @param scheduler the {@link AsyncScheduler}
++     * @param timeUnit the {@link TimeUnit}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final AsyncScheduler scheduler, @Nullable final TimeUnit timeUnit) {
++        this.asyncScheduler = scheduler;
++        this.timeUnit = timeUnit;
++    }
++
++    /**
++     * A constructor to build an entity scheduler.
++     *
++     * @param scheduler the {@link EntityScheduler}
++     * @param retired the {@link Runnable}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final EntityScheduler scheduler, @Nullable final Runnable retired) {
++        this.entityScheduler = scheduler;
++        this.entityRetired = retired;
++    }
++
++    /**
++     * A constructor for the {@link GlobalRegionScheduler}.
++     *
++     * @param scheduler the {@link GlobalRegionScheduler}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final GlobalRegionScheduler scheduler) {
++        this.globalRegionScheduler = scheduler;
++    }
++
++    /**
++     * A constructor that builds a {@link Runnable} for the {@link Location}'s region.
++     *
++     * @param scheduler the {@link RegionScheduler} for the {@link Location}
++     * @param location the {@link Location}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final RegionScheduler scheduler, @NotNull final Location location) {
++        this(scheduler, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
++    }
++
++    /**
++     * A constructor that builds a {@link Runnable} for the world region.
++     *
++     * @param scheduler the {@link RegionScheduler} for the world
++     * @param world the {@link World}
++     * @param chunkX the chunk's {@link Integer}
++     * @param chunkZ the chunk's {@link Integer}
++     * @since 1.0
++     */
++    public FoliaRunnable(@NotNull final RegionScheduler scheduler, @NotNull final World world, final int chunkX, final int chunkZ) {
++        this.regionScheduler = scheduler;
++        this.world = world;
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++    }
++
++    /**
++     * Checks if the task is cancelled or not.
++     *
++     * @return true or false
++     * @throws IllegalStateException throws this exception if unable to check
++     * @since 1.0
++     */
++    public final boolean isCancelled() throws IllegalStateException {
++        checkScheduled();
++
++        return this.task.isCancelled();
++    }
++
++    /**
++     * Cancels a task.
++     *
++     * @throws IllegalStateException throws this exception if unable to cancel
++     * @since 1.0
++     */
++    public void cancel() throws IllegalStateException {
++        this.task.cancel();
++    }
++
++    /**
++     * Runs a task immediately supporting Folia/Paper.
++     *
++     * @param plugin the {@link Plugin}
++     * @return true if the task was successfully executed.
++     * @throws IllegalArgumentException throws this exception if it fails
++     * @throws IllegalStateException throws this exception if it is unstable
++     * @since 1.5.6
++     */
++    public final boolean execute(@NotNull final Plugin plugin) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (this.globalRegionScheduler != null) {
++            this.globalRegionScheduler.execute(plugin, this);
++        } else if (this.entityScheduler != null) {
++            return this.entityScheduler.execute(plugin, this, this.entityRetired, 1L);
++        } else if (this.regionScheduler != null) {
++            this.regionScheduler.execute(plugin, this.world, this.chunkX, this.chunkZ, this);
++        } else if (this.asyncScheduler != null) {
++            this.asyncScheduler.runNow(plugin, scheduledTask -> this.run());
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++
++        return true;
++    }
++
++    /**
++     * Runs a task on the next tick supporting Folia/Paper.
++     *
++     * @param plugin the {@link Plugin}
++     * @return a scheduled task
++     * @throws IllegalArgumentException throws this exception if it fails
++     * @throws IllegalStateException throws this exception if it is unstable
++     * @since 1.0
++     */
++    public @NotNull final ScheduledTask run(@NotNull final Plugin plugin) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.run(plugin, scheduledTask -> this.run()));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.run(plugin, scheduledTask -> this.run(), this.entityRetired));
++        } else if (this.regionScheduler != null) {
++            return setupTask(this.regionScheduler.run(plugin, this.world, this.chunkX, this.chunkZ, scheduledTask -> this.run()));
++        } else if (this.asyncScheduler != null) {
++            return setupTask(this.asyncScheduler.runDelayed(plugin, scheduledTask -> this.run(), 50, TimeUnit.MILLISECONDS));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to run after the specified number of server ticks.
++     *
++     * @param plugin the reference to the {@link Plugin} scheduling task
++     * @param delay the ticks to wait before running the task
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     * @since 1.0
++     */
++    public @NotNull final ScheduledTask runDelayed(@NotNull final Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runDelayed(plugin, scheduledTask -> this.run(), this.entityRetired, delay));
++        } else if (this.regionScheduler != null) {
++            return setupTask(this.regionScheduler.runDelayed(plugin, this.world, this.chunkX, this.chunkZ, scheduledTask -> this.run(), delay));
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runDelayed(plugin, scheduledTask -> this.run(), delay, this.timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Schedules this to repeatedly run until cancelled, starting after the
++     * specified number of server ticks.
++     *
++     * @param plugin the reference to the {@link Plugin} scheduling task
++     * @param delay the ticks to wait before running the task
++     * @param period the ticks to wait between runs
++     * @return a ScheduledTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     * @since 1.0
++     */
++    public @NotNull final ScheduledTask runAtFixedRate(@NotNull final Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        delay = Math.max(1, delay);
++        period = Math.max(1, period);
++
++        if (this.globalRegionScheduler != null) {
++            return setupTask(this.globalRegionScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period));
++        } else if (this.entityScheduler != null) {
++            return setupTask(this.entityScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), this.entityRetired, delay, period));
++        } else if (this.regionScheduler != null) {
++            return setupTask(this.regionScheduler.runAtFixedRate(plugin, this.world, this.chunkX, this.chunkZ, scheduledTask -> this.run(), delay, period));
++        } else if (this.asyncScheduler != null && this.timeUnit != null) {
++            return setupTask(this.asyncScheduler.runAtFixedRate(plugin, scheduledTask -> this.run(), delay, period, this.timeUnit));
++        } else {
++            throw new UnsupportedOperationException("The task type is not supported.");
++        }
++    }
++
++    /**
++     * Gets the task id for this runnable.
++     *
++     * @return the task id that this runnable was scheduled as
++     * @throws IllegalStateException if task was not scheduled yet
++     * @since 1.0
++     */
++    public final int getTaskId() throws IllegalStateException {
++        checkScheduled();
++
++        return this.task.hashCode();
++    }
++
++    /**
++     * Checks scheduled and throws a state exception if null i.e. not scheduled.
++     *
++     * @since 1.0
++     */
++    private void checkScheduled() {
++        if (this.task == null) throw new IllegalStateException("Not scheduled yet");
++    }
++
++    /**
++     * Checks if scheduled and throws an illegal state exception if not null i.e. already scheduled.
++     *
++     * @since 1.0
++     */
++    private void checkNotYetScheduled() {
++        if (this.task != null) throw new IllegalStateException("Already scheduled as " + task.hashCode());
++    }
++
++    /**
++     * Sets up the {@link ScheduledTask}.
++     *
++     * @param task the {@link ScheduledTask} to schedule
++     * @return the {@link ScheduledTask}
++     * @since 1.0
++     */
++    private @NotNull ScheduledTask setupTask(@NotNull final ScheduledTask task) {
++        return this.task = task;
++    }
++
++    public ScheduledTask getScheduledTask() {
++        return task;
++    }
++}
+diff --git a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+index 8cf612dc3..1a975317e 100644
+--- a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
++++ b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+@@ -239,7 +239,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         getServer().getPluginManager().registerEvents(getPlayerListener(), this);
+         if (configSettings.getStrictPlayerMovement() > 0) {
+             final long ticks = configSettings.getStrictPlayerMovement() * 20L;
+-            getServer().getScheduler().scheduleSyncRepeatingTask(this, getPlayerMoveThread(), ticks, ticks);
++            getServer().getGlobalRegionScheduler().runAtFixedRate(this, task -> getPlayerMoveThread().run(), ticks, ticks);
+         }
+         if (depends.getPartyProvider() != null) {
+             getServer().getPluginManager().registerEvents(getUniteListener(), this);
+@@ -265,13 +265,18 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         for (final Player p : getServer().getOnlinePlayers()) {
+             getQuester(p.getUniqueId()).saveData();
+         }
+-        Bukkit.getScheduler().cancelTasks(this);
++        this.cancelTasks();
+         getLogger().info("Closing storage...");
+         if (storage != null) {
+             storage.close();
+         }
+     }
+ 
++    private void cancelTasks() {
++        Bukkit.getAsyncScheduler().cancelTasks(this);
++        Bukkit.getGlobalRegionScheduler().cancelTasks(this);
++    }
++
+     public boolean isProVersion() {
+         return false;
+     }
+@@ -655,7 +660,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+      * At startup, this lets soft-depends (namely Citizens) fully load first
+      */
+     private void delayLoadQuestInfo() {
+-        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
++        getServer().getGlobalRegionScheduler().runDelayed(this, (task) -> {
+             conditionLoader.init();
+             actionLoader.init();
+             questLoader.init();
+@@ -703,7 +708,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         }
+         loading = true;
+         reloadConfig();
+-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
++        Bukkit.getAsyncScheduler().runNow(this, (task) -> {
+             try {
+                 getStorage().saveOfflineQuesters().get();
+                 BukkitLang.clear();
+@@ -747,7 +752,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+             exception.printStackTrace();
+         }
+         if (callback != null) {
+-            Bukkit.getScheduler().runTask(BukkitQuestsPlugin.this, () -> {
++            Bukkit.getGlobalRegionScheduler().run(BukkitQuestsPlugin.this, (task) -> {
+                 loading = false;
+                 callback.execute(result);
+             });
+diff --git a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index 2fda94933..3ae9832fe 100644
+--- a/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/core/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -412,16 +412,16 @@ public class BukkitAction implements Action {
+             for (final int seconds : toNotify) {
+                 if (timer > seconds) {
+                     quester.getTimers().put(new BukkitActionTimer(quester, quest, seconds)
+-                            .runTaskLater(plugin, (timer - seconds) * 20L).getTaskId(), quest);
++                            .runDelayed(plugin, (timer - seconds) * 20L), quest);
+                 }
+             }
+             quester.getTimers().put(new BukkitActionTimer(quester, quest, 0)
+-                    .runTaskLater(plugin, timer * 20L).getTaskId(), quest);
++                    .runDelayed(plugin, timer * 20L), quest);
+         }
+         if (cancelTimer) {
+-            for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++            for (final Map.Entry<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+                 if (entry.getValue().getId().equals(quest.getId())) {
+-                    plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                    entry.getKey().cancel();
+                     quester.getTimers().remove(entry.getKey());
+                 }
+             }
+diff --git a/core/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java b/core/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
+index cc7373722..1e3599665 100644
+--- a/core/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
++++ b/core/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
+@@ -52,20 +52,20 @@ public class BukkitQuestCommandHandler {
+                                     || quester.getStageTime(q) < 0L) {
+                                 final String msg = BukkitLang.get(player, "questObjectivesTitle")
+                                         .replace("<quest>", q.getName());
+-                                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
++                                player.getScheduler().runDelayed(plugin, (scheduledTask) -> {
+                                     BukkitLang.send(player, ChatColor.GOLD + msg);
+                                     quester.showCurrentObjectives(q, quester, false);
+                                     ticks[0]++;
+-                                }, ticks[0]);
++                                }, null, ticks[0]);
+                             } else {
+                                 final long time = quester.getStageTime(q);
+                                 final String msg = ChatColor.YELLOW + "(" + BukkitLang.get(player, "delay") + ") "
+                                         + ChatColor.RED + BukkitLang.get(player, "plnTooEarly")
+                                         .replace("<quest>", q.getName().replace("<time>", BukkitMiscUtil.getTime(time)));
+-                                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
++                                player.getScheduler().runDelayed(plugin, (scheduledTask) -> {
+                                     BukkitLang.send(player, msg);
+                                     ticks[0]++;
+-                                }, ticks[0]);
++                                }, null, ticks[0]);
+                             }
+                         }
+                     } else {
+diff --git a/core/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java b/core/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
+index 3fda1473c..77bac4ca6 100644
+--- a/core/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
++++ b/core/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
+@@ -83,7 +83,7 @@ public class BukkitQuestsTopCommand extends BukkitQuestsSubCommand {
+                         .replace("<greatest>", String.valueOf(plugin.getConfigSettings().getTopLimit())));
+                 return;
+             }
+-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
++            Bukkit.getAsyncScheduler().runNow(plugin, (task) -> {
+                 final File folder = new File(plugin.getDataFolder(), "data");
+                 final File[] playerFiles = folder.listFiles();
+                 final Map<String, Integer> questPoints = new HashMap<>();
+diff --git a/core/src/main/java/me/pikamug/quests/dependencies/BukkitDependencies.java b/core/src/main/java/me/pikamug/quests/dependencies/BukkitDependencies.java
+index 8a58f8e02..03f3ba540 100644
+--- a/core/src/main/java/me/pikamug/quests/dependencies/BukkitDependencies.java
++++ b/core/src/main/java/me/pikamug/quests/dependencies/BukkitDependencies.java
+@@ -67,7 +67,7 @@ public class BukkitDependencies implements Dependencies {
+     public static ZNPCsPlus znpcsPlusLegacy = null;
+     public static NpcApi znpcsPlusApi = null;
+     private static PartiesAPI parties = null;
+-    private int npcEffectThread = -1;
++    private io.papermc.paper.threadedregions.scheduler.ScheduledTask npcEffectThread = null;
+     
+     public BukkitDependencies(final BukkitQuestsPlugin plugin) {
+         this.plugin = plugin;
+@@ -381,15 +381,15 @@ public class BukkitDependencies implements Dependencies {
+     }
+ 
+     public void startNpcEffectThread() {
+-        if (npcEffectThread == -1 && plugin.getConfigSettings().canNpcEffects()) {
+-            npcEffectThread = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin,
+-                    plugin.getNpcEffectThread(), 20, 20);
++        if (npcEffectThread == null && plugin.getConfigSettings().canNpcEffects()) {
++            npcEffectThread = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task ->
++                    plugin.getNpcEffectThread().run(), 20, 20);
+         }
+     }
+ 
+     @SuppressWarnings("unused")
+     public void stopNpcEffectThread() {
+-        plugin.getServer().getScheduler().cancelTask(npcEffectThread);
++        npcEffectThread.cancel();
+     }
+ 
+     public SkillType getMcMMOSkill(final String s) {
+diff --git a/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java b/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+index 71096f61d..8ca02a411 100644
+--- a/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
++++ b/core/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+@@ -137,8 +137,8 @@ public class BukkitPlayerListener implements Listener {
+                                     e.printStackTrace();
+                                 }
+                             }
+-                            plugin.getServer().getScheduler().runTaskLater(plugin, () ->
+-                                    event.getWhoClicked().closeInventory(), 1L);
++                            event.getWhoClicked().getScheduler().runDelayed(plugin, (task) ->
++                                    event.getWhoClicked().closeInventory(), null, 1L);
+                             return;
+                         }
+                     }
+@@ -516,13 +516,13 @@ public class BukkitPlayerListener implements Listener {
+                         final String chat = event.getMessage();
+                         for (final String s : currentStage.getChatActions().keySet()) {
+                             if (s.equalsIgnoreCase(chat)) {
+-                                new BukkitRunnable() {
++                                new me.pikamug.quests.util.FoliaRunnable(quester.getPlayer().getScheduler(), null) {
+                                     @Override
+                                     public void run() {
+                                         currentStage.getChatActions().get(s).fire(quester, quest);
+                                     }
+ 
+-                                }.runTask(this.plugin);
++                                }.run(this.plugin);
+                             }
+                         }
+                     }
+@@ -864,7 +864,7 @@ public class BukkitPlayerListener implements Listener {
+         final Player player = event.getPlayer();
+         if (plugin.canUseQuests(player.getUniqueId())) {
+             final Quester quester = plugin.getQuester(player.getUniqueId());
+-            Bukkit.getScheduler().runTaskLater(plugin, quester::findCompassTarget, 10);
++            event.getPlayer().getScheduler().runDelayed(plugin, scheduledTask -> quester.findCompassTarget(), null, 10);
+         }
+     }
+ 
+@@ -887,7 +887,7 @@ public class BukkitPlayerListener implements Listener {
+                 noobCheck.saveData();
+             }
+ 
+-            plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
++            plugin.getServer().getAsyncScheduler().runDelayed(plugin, (task) -> {
+                 final CompletableFuture<Quester> cf = plugin.getStorage().loadQuester(player.getUniqueId());
+                 try {
+                     final Quester quester = cf.get();
+@@ -909,7 +909,7 @@ public class BukkitPlayerListener implements Listener {
+                             quester.startStageTimer(quest);
+                         }
+                     }
+-                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
++                    plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, (task1) -> {
+                         if (quester.hasJournal()) {
+                             quester.updateJournal();
+                         }
+@@ -918,7 +918,7 @@ public class BukkitPlayerListener implements Listener {
+                 } catch (final Exception e) {
+                     e.printStackTrace();
+                 }
+-            }, 20L);
++            }, 20L*50, java.util.concurrent.TimeUnit.MILLISECONDS);
+         }
+     }
+ 
+@@ -986,7 +986,7 @@ public class BukkitPlayerListener implements Listener {
+      * @since 3.8.2
+      */
+     public void playerMove(final UUID uuid, final Location location) {
+-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
++        plugin.getServer().getAsyncScheduler().runNow(plugin, (scheduledTask) -> {
+             final Quester quester = plugin.getQuester(uuid);
+             if (quester != null) {
+                 if (plugin.canUseQuests(uuid)) {
+@@ -1000,7 +1000,7 @@ public class BukkitPlayerListener implements Listener {
+                         if (quester.getCurrentQuests().containsKey(quest)) {
+                             if (quester.getCurrentStage(quest) != null
+                                     && quester.getCurrentStage(quest).containsObjective(type)) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> quester
++                                plugin.getServer().getRegionScheduler().run(plugin, location, scheduledTask1 -> quester
+                                         .reachLocation(quest, location));
+                             }
+                         }
+@@ -1008,7 +1008,7 @@ public class BukkitPlayerListener implements Listener {
+                         dispatchedQuestIDs.addAll(quester.dispatchMultiplayerEverything(quest, type,
+                                 (final Quester q, final Quest cq) -> {
+                             if (!dispatchedQuestIDs.contains(cq.getId())) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> q
++                                plugin.getServer().getRegionScheduler().run(plugin, location, scheduledTask1 -> q
+                                         .reachLocation(cq, location));
+                             }
+                             return null;
+diff --git a/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java b/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
+index e0ca9c3a7..07ae492f1 100644
+--- a/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
++++ b/core/src/main/java/me/pikamug/quests/listeners/BukkitZnpcsApiListener.java
+@@ -45,7 +45,7 @@ public class BukkitZnpcsApiListener implements Listener {
+             return;
+         }
+         // Needed because the NpcInteractEvent is fired async
+-        plugin.getServer().getScheduler().runTask(plugin, () -> {
++        event.getPlayer().getScheduler().run(plugin, (task) -> {
+             if (event.getClickType().equals(InteractionType.LEFT_CLICK)) {
+                 if (plugin.getQuestFactory().getSelectingNpcs().contains(event.getPlayer().getUniqueId())) {
+                     if (event.getNpc() == null) {
+@@ -263,7 +263,7 @@ public class BukkitZnpcsApiListener implements Listener {
+                     }
+                 }
+             }
+-        });
++        }, null);
+     }
+ 
+     private String extracted(final Quester quester) {
+diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+index cf7232a34..7095074d6 100644
+--- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
++++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+@@ -106,7 +106,7 @@ public class BukkitQuester implements Quester {
+     protected int questPoints = 0;
+     private String compassTargetQuestId;
+     private long lastNotifiedCondition = 0L;
+-    protected ConcurrentHashMap<Integer, Quest> timers = new ConcurrentHashMap<>();
++    protected ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers = new ConcurrentHashMap<>();
+     protected ConcurrentHashMap<Quest, Integer> currentQuests = new ConcurrentHashMap<Quest, Integer>() {
+ 
+         private static final long serialVersionUID = 6361484975823846780L;
+@@ -326,17 +326,17 @@ public class BukkitQuester implements Quester {
+     }
+ 
+     @Override
+-    public ConcurrentHashMap<Integer, Quest> getTimers() {
++    public ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> getTimers() {
+         return timers;
+     }
+ 
+     @Override
+-    public void setTimers(final ConcurrentHashMap<Integer, Quest> timers) {
++    public void setTimers(final ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers) {
+         this.timers = timers;
+     }
+ 
+     @Override
+-    public void removeTimer(final Integer timerId) {
++    public void removeTimer(final io.papermc.paper.threadedregions.scheduler.ScheduledTask timerId) {
+         this.timers.remove(timerId);
+     }
+ 
+@@ -3122,7 +3122,7 @@ public class BukkitQuester implements Quester {
+     public void sayPassword(final Quest quest, final AsyncPlayerChatEvent evt) {
+         final ObjectiveType type = ObjectiveType.PASSWORD;
+         final Set<String> dispatchedQuestIDs = new HashSet<>();
+-        plugin.getServer().getScheduler().runTask(plugin, () -> {
++        evt.getPlayer().getScheduler().run(plugin, (task) -> {
+             final BukkitQuesterPreUpdateObjectiveEvent preEvent = new BukkitQuesterPreUpdateObjectiveEvent(this, quest,
+                     new BukkitObjective(type, null, 1, 1));
+             plugin.getServer().getPluginManager().callEvent(preEvent);
+@@ -3134,9 +3134,9 @@ public class BukkitQuester implements Quester {
+                     final String display = getCurrentStage(quest).getPasswordDisplays().get(index);
+                     bukkitQuestProgress.passwordsSaid.set(index, true);
+ 
+-                    plugin.getServer().getScheduler().runTask(plugin, () -> finishObjective(quest,
++                    getPlayer().getScheduler().run(plugin, (task1) -> finishObjective(quest,
+                             new BukkitObjective(type, null, new ItemStack(Material.AIR, 1),
+-                            new ItemStack(Material.AIR, 1)), null, null, null, null, null, display, null));
++                            new ItemStack(Material.AIR, 1)), null, null, null, null, null, display, null), null);
+ 
+                     final int finalIndex = index;
+                     dispatchedQuestIDs.addAll(dispatchMultiplayerEverything(quest, type,
+@@ -3158,7 +3158,7 @@ public class BukkitQuester implements Quester {
+             final BukkitQuesterPostUpdateObjectiveEvent postEvent = new BukkitQuesterPostUpdateObjectiveEvent(this,
+                     quest, new BukkitObjective(type, null, 1, 1));
+             plugin.getServer().getPluginManager().callEvent(postEvent);
+-        });
++        }, null);
+     }
+ 
+     /**
+@@ -3832,10 +3832,10 @@ public class BukkitQuester implements Quester {
+      */
+     public void startStageTimer(final Quest quest) {
+         if (getQuestProgressOrDefault(quest).getDelayTimeLeft() > -1) {
+-            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new BukkitStageTimer(plugin, this, quest),
++            plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> new BukkitStageTimer(plugin, this, quest).run(),
+                     (long) (getQuestProgressOrDefault(quest).getDelayTimeLeft() * 0.02));
+         } else {
+-            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new BukkitStageTimer(plugin, this, quest),
++            plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> new BukkitStageTimer(plugin, this, quest).run(),
+                     (long) (getCurrentStage(quest).getDelay() * 0.02));
+             if (getCurrentStage(quest).getDelayMessage() != null) {
+                 final Player p = plugin.getServer().getPlayer(id);
+@@ -3964,9 +3964,9 @@ public class BukkitQuester implements Quester {
+             currentQuests.remove(quest);
+             questProgress.remove(quest);
+             if (!timers.isEmpty()) {
+-                for (final Map.Entry<Integer, Quest> entry : timers.entrySet()) {
++                for (final Map.Entry<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> entry : timers.entrySet()) {
+                     if (entry.getValue().getName().equals(quest.getName())) {
+-                        plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                        entry.getKey().cancel();
+                         timers.remove(entry.getKey());
+                     }
+                 }
+@@ -4100,7 +4100,7 @@ public class BukkitQuester implements Quester {
+         if (getPlayer() == null || !getPlayer().hasPermission("quests.compass")) {
+             return;
+         }
+-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
++        Bukkit.getAsyncScheduler().runNow(plugin, (task) -> {
+             final LinkedList<String> list = currentQuests.keySet().stream()
+                     .sorted(Comparator.comparing(Quest::getName)).map(Quest::getId)
+                     .collect(Collectors.toCollection(LinkedList::new));
+@@ -4356,8 +4356,8 @@ public class BukkitQuester implements Quester {
+                         .replace("<quest>", quest.getName()));
+                 }
+                 if (stage.getFailAction() != null) {
+-                    plugin.getServer().getScheduler().runTask(plugin, () ->
+-                            getCurrentStage(quest).getFailAction().fire(this, quest));
++                    getPlayer().getScheduler().run(plugin, (task1) ->
++                            getCurrentStage(quest).getFailAction().fire(this, quest), null);
+                 }
+                 hardQuit(quest);
+             } else if (giveReason) {
+diff --git a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+index 9250018d4..6a9ecefbb 100644
+--- a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
++++ b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+@@ -284,9 +284,9 @@ public class BukkitQuest implements Quest {
+             doNextStage(quester, allowSharedProgress);
+         } else {
+             // Here we avoid BukkitStageTimer as the stage objectives are incomplete
+-            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
++            quester.getPlayer().getScheduler().runDelayed(plugin, (scheduledTask) -> {
+                 doNextStage(quester, allowSharedProgress);
+-            }, (long) (currentStage.getDelay() * 0.02));
++            }, null, (long) (currentStage.getDelay() * 0.02));
+         }
+         quester.updateJournal();
+     }
+@@ -409,7 +409,7 @@ public class BukkitQuest implements Quest {
+             return false;
+         }
+         final Quest quest = this;
+-        Bukkit.getScheduler().runTask(plugin, () -> {
++        Bukkit.getGlobalRegionScheduler().run(plugin, (task) -> {
+             Location targetLocation = null;
+             if (stage.getNpcsToInteract() != null && stage.getNpcsToInteract().size() > 0) {
+                 targetLocation = plugin.getDependencies().getNpcLocation(stage.getNpcsToInteract().getFirst());
+@@ -747,9 +747,9 @@ public class BukkitQuest implements Quest {
+         final ConcurrentSkipListSet<Quest> completedQuests = quester.getCompletedQuests();
+         completedQuests.add(this);
+         quester.setCompletedQuests(completedQuests);
+-        for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++        for (final Map.Entry<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+             if (entry.getValue().getName().equals(getName())) {
+-                plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                entry.getKey().cancel();
+                 quester.getTimers().remove(entry.getKey());
+             }
+         }
+@@ -757,7 +757,7 @@ public class BukkitQuest implements Quest {
+             final Player p = (Player)player;
+             final String[] ps = BukkitConfigUtil.parseStringWithPossibleLineBreaks(ChatColor.AQUA
+                     + finished, this, p);
+-            Bukkit.getScheduler().runTaskLater(plugin, () -> p.sendMessage(ps), 40);
++            p.getScheduler().runDelayed(plugin, (task) -> p.sendMessage(ps), null, 40);
+         }
+         if (planner.getCooldown() > -1) {
+             quester.getCompletedTimes().put(this, System.currentTimeMillis());
+@@ -808,7 +808,7 @@ public class BukkitQuest implements Quest {
+             if (Bukkit.isPrimaryThread()) {
+                 Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+             } else {
+-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
++                Bukkit.getGlobalRegionScheduler().execute(plugin, () ->
+                         Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command));
+             }
+             issuedReward = true;
+@@ -1118,9 +1118,9 @@ public class BukkitQuest implements Quest {
+         if (preEvent.isCancelled()) {
+             return;
+         }
+-        for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++        for (final Map.Entry<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+             if (entry.getValue().getId().equals(getId())) {
+-                plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                entry.getKey().cancel();
+                 quester.getTimers().remove(entry.getKey());
+             }
+         }
+diff --git a/core/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java b/core/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
+index 6754ac94d..adbe5247b 100644
+--- a/core/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
++++ b/core/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
+@@ -96,7 +96,7 @@ public class BukkitMetrics {
+             enabled,
+             this::appendPlatformData,
+             this::appendServiceData,
+-            submitDataTask -> Bukkit.getScheduler().runTask(plugin, submitDataTask),
++            submitDataTask -> Bukkit.getGlobalRegionScheduler().execute(plugin, submitDataTask),
+             plugin::isEnabled,
+             (message, error) -> this.plugin.getLogger().log(Level.WARNING, message, error),
+             (message) -> this.plugin.getLogger().log(Level.INFO, message),
+diff --git a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+index b086377d6..31359c201 100644
+--- a/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
++++ b/core/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+@@ -17,13 +17,14 @@ import me.pikamug.quests.util.BukkitMiscUtil;
+ import org.bukkit.ChatColor;
+ import org.bukkit.scheduler.BukkitRunnable;
+ 
+-public class BukkitActionTimer extends BukkitRunnable {
++public class BukkitActionTimer extends me.pikamug.quests.util.FoliaRunnable {
+ 
+     private final Quester quester;
+     private final Quest quest;
+     private final int time;
+ 
+     public BukkitActionTimer(final Quester quester, final Quest quest, final int time) {
++        super(quester.getPlayer().getScheduler(), null);
+         this.quester = quester;
+         this.quest = quest;
+         this.time = time;
+@@ -31,7 +32,7 @@ public class BukkitActionTimer extends BukkitRunnable {
+ 
+     @Override
+     public void run() {
+-        quester.removeTimer(getTaskId());
++        quester.removeTimer(this.getScheduledTask());
+         if (time < 1) {
+             quest.failQuest(quester, false);
+             quester.updateJournal();
+diff --git a/core/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java b/core/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
+index d265a7c4d..8bd4f6f8e 100644
+--- a/core/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
++++ b/core/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
+@@ -31,7 +31,7 @@ public class BukkitUpdateChecker {
+ 
+     public void getVersion(final Consumer<String> consumer) {
+         if (plugin.getConfigSettings().canUpdateCheck()) {
+-            Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
++            Bukkit.getAsyncScheduler().runNow(this.plugin, (task) -> {
+                 try (final InputStream inputStream = new URL("https://api.spigotmc.org/legacy/update.php?resource="
+                         + this.resourceId).openStream(); final Scanner scanner = new Scanner(inputStream)) {
+                     if (scanner.hasNext()) {
+-- 
+2.45.1.windows.1
+
