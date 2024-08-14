@@ -1,7 +1,7 @@
-From 2a017b24a528883adfdd4c56f9291c1d382307ad Mon Sep 17 00:00:00 2001
+From c06d41621c42a4c5772b4a340acbc30a9435cdfb Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 14 Aug 2024 11:06:00 +0200
-Subject: [PATCH 6/6] Fix Entity access
+Date: Wed, 14 Aug 2024 11:18:28 +0200
+Subject: [PATCH 6/7] Fix Entity access
 
 ---
  .../me/pikamug/quests/quests/BukkitQuest.java | 91 ++++++++++---------
