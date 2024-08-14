@@ -37,7 +37,7 @@ jobs:
     - name: Build with Maven
       shell: bash
       run: |
-        cd Quests-Patch
+        cd Quests-Patchs
         mvn clean compile install
 
     - name: Upload Jar file
