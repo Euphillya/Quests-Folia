@@ -58,4 +58,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: compiled-jar
-        path: Quests-Patch/dist/target/*.jar
+        path: Quests-Patchs/dist/target/*.jar
