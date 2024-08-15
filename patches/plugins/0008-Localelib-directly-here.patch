@@ -1,6 +1,6 @@
-From 6fa9c19ebbdcdcc0d13c1759600469ad86ce8cde Mon Sep 17 00:00:00 2001
+From 1c1c707ad40c5e5578e210c7c7ca027340ad34e9 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 15 Aug 2024 08:16:28 +0200
+Date: Thu, 15 Aug 2024 21:34:52 +0200
 Subject: [PATCH 8/8] Localelib directly here
 
 ---

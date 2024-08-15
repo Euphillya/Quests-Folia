@@ -1,6 +1,6 @@
-From 5c5d711e566489a274fb3a65ee438da206a59473 Mon Sep 17 00:00:00 2001
+From 762d55888b6e1d72a4bbd96c8e2d6e381a729c73 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 15 Aug 2024 08:16:28 +0200
+Date: Thu, 15 Aug 2024 21:34:52 +0200
 Subject: [PATCH 5/8] Fix Dispatching command async
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH 5/8] Fix Dispatching command async
  1 file changed, 2 insertions(+)
 
 diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-index 7095074d6..270c3d91b 100644
+index c6a6553a0..d3fcc36f4 100644
 --- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 +++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 @@ -1577,6 +1577,7 @@ public class BukkitQuester implements Quester {
