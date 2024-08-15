@@ -31,7 +31,7 @@ jobs:
         mkdir -p temp_lib_install
         cp libs/LocaleLib-4.0.0-Folia.jar temp_lib_install/
         cd temp_lib_install
-        mvn install:install-file -Dfile=LocaleLib-4.0.0-Folia.jar -DgroupId=fr.euphyllia -DartifactId=localelib -Dversion=4.0.0-Folia -Dpackaging=jar
+        mvn install:install-file -N -Dfile=LocaleLib-4.0.0-Folia.jar -DgroupId=fr.euphyllia -DartifactId=localelib -Dversion=4.0.0-Folia -Dpackaging=jar
         cd ..
 
     - name: Update upstream and apply patches
