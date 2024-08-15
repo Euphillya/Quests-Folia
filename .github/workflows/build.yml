@@ -28,11 +28,10 @@ jobs:
 
     - name: Install LocaleLib for Folia
       run: |
-        mkdir -p temp_lib_install
-        cp libs/LocaleLib.jar temp_lib_install/
-        cp libs/pom.xml temp_lib_install/
-        cd temp_lib_install
-        mvn install:install-file -Dfile=LocaleLib.jar -DgroupId=fr.euphyllia -DartifactId=localelib -Dversion=4.0.0-Folia -Dpackaging=jar
+        git clone https://github.com/Euphillya/LocaleLib-Folia
+        cd LocaleLib-Folia
+        mvn clean compile package
+        mvn install:install-file -Dfile=target/LocaleLib-4.0.0-Folia.jar -DgroupId=fr.euphyllia -DartifactId=localelib -Dversion=4.0.0-Folia -Dpackaging=jar
         cd ..
 
     - name: Update upstream and apply patches
