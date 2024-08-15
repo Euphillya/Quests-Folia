@@ -1,7 +1,7 @@
-From 8f6a66bcb4b026bb4b6e72a4124db53460c57724 Mon Sep 17 00:00:00 2001
+From e38c7aed88f2daa96dc9b6a4a86676603eed5825 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 14 Aug 2024 11:18:27 +0200
-Subject: [PATCH 3/7] Change Bukkit Scheduler to Folia
+Date: Thu, 15 Aug 2024 08:16:27 +0200
+Subject: [PATCH 3/8] Change Bukkit Scheduler to Folia
 
 ---
  .../me/pikamug/quests/player/Quester.java     |   6 +-

@@ -26,6 +26,9 @@ jobs:
     - name: Grant execute permission to script
       run: bash -c "chmod +x script.sh"
 
+    - name: Install LocaleLib for Folia
+      run : mvn install:install-file -Dfile=libs/LocaleLib-4.0.0-Folia.jar -DgroupId=fr.euphyllia -DartifactId=localelib -Dversion=4.0.0-Folia -Dpackaging=jar
+
     - name: Update upstream and apply patches
       shell: bash
       run: |

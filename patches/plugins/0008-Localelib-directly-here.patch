@@ -1,0 +1,58 @@
+From 6fa9c19ebbdcdcc0d13c1759600469ad86ce8cde Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Thu, 15 Aug 2024 08:16:28 +0200
+Subject: [PATCH 8/8] Localelib directly here
+
+---
+ core/pom.xml                                             | 9 +++++----
+ .../main/java/me/pikamug/quests/BukkitQuestsPlugin.java  | 5 +++--
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/core/pom.xml b/core/pom.xml
+index 174da418d..ec6369c55 100644
+--- a/core/pom.xml
++++ b/core/pom.xml
+@@ -168,9 +168,10 @@
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+-            <groupId>me.pikamug.localelib</groupId>
+-            <artifactId>LocaleLib</artifactId>
+-            <version>4.0.0</version>
++            <groupId>fr.euphyllia</groupId>
++            <artifactId>localelib</artifactId>
++            <version>4.0.0-Folia</version>
++            <scope>compile</scope>
+         </dependency>
+         <dependency>
+             <groupId>de.tr7zw</groupId>
+@@ -268,7 +269,7 @@
+                     <artifactSet>
+                         <includes>
+                             <include>me.*</include>
+-                            <include>com.github.PikaMug:LocaleLib</include>
++                            <include>fr.euphyllia:localelib</include>
+                             <include>de.tr7zw:item-nbt-api</include>
+                             <include>org.slf4j:slf4j-simple</include>
+                             <include>org.slf4j:slf4j-api</include>
+diff --git a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+index 1a975317e..d880c48e9 100644
+--- a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
++++ b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+@@ -143,10 +143,11 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         questLoader = new BukkitQuestYamlStorage(this);
+         try {
+             Class.forName("me.pikamug.quests.libs.localelib.LocaleManager");
+-            localeManager = new LocaleManager();
++            localeManager = new LocaleManager(this);
+             BlockItemStacks.init(!localeManager.isBelow113());
+-        } catch (final Exception ignored) {
++        } catch (final Exception exception) {
+             getLogger().warning("LocaleLib not present! Is this a debug environment?");
++            exception.printStackTrace();
+         }
+ 
+         convoListener = new BukkitConvoListener();
+-- 
+2.45.1.windows.1
+
