@@ -1,6 +1,6 @@
-From ea2fe20fe1aa328a86d01c16fe6b468b17760f31 Mon Sep 17 00:00:00 2001
+From d111f3b14367765e06afe3c662b81413963acc1e Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 15 Aug 2024 21:34:51 +0200
+Date: Sun, 25 Aug 2024 09:20:32 +0200
 Subject: [PATCH 2/8] Fix particles 1.20.6
 
 ---

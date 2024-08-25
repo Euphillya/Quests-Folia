@@ -1,6 +1,6 @@
-From eb14ec725407e765a26a9c02358bda8f9d2c9855 Mon Sep 17 00:00:00 2001
+From 4d3e6915b57fbf598183bf8426208addfed2c146 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 15 Aug 2024 21:34:51 +0200
+Date: Sun, 25 Aug 2024 09:20:32 +0200
 Subject: [PATCH 3/8] Change Bukkit Scheduler to Folia
 
 ---
@@ -599,7 +599,7 @@ index e0ca9c3a7..07ae492f1 100644
  
      private String extracted(final Quester quester) {
 diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-index ca0e74036..c6a6553a0 100644
+index 35b688549..e3ee28355 100644
 --- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 +++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 @@ -106,7 +106,7 @@ public class BukkitQuester implements Quester {

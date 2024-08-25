@@ -1,6 +1,6 @@
-From b9a3b1ab90fbc0c77359383f9346666a667a5ad1 Mon Sep 17 00:00:00 2001
+From 75e6a53d811d396bcd99f8bcac5b8286ee32427d Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Thu, 15 Aug 2024 21:34:51 +0200
+Date: Sun, 25 Aug 2024 09:20:31 +0200
 Subject: [PATCH 1/8] Rebrand
 
 ---
@@ -159,7 +159,7 @@ index 5f0edb02b..f4163ff02 100644
              <groupId>me.pikamug.quests</groupId>
              <artifactId>quests-core</artifactId>
 diff --git a/pom.xml b/pom.xml
-index 18382b3e7..830b5bb57 100644
+index 29f0adb87..a5a76e573 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -13,9 +13,9 @@
