@@ -1,14 +1,14 @@
-From e2b14805ff2c749032eb290e241b143fed2850ce Mon Sep 17 00:00:00 2001
+From 55950d2832b3bc9e1dfd36d93288dd0d5c4af6c7 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 25 Aug 2024 09:20:33 +0200
-Subject: [PATCH 6/8] Fix Entity access
+Date: Sat, 28 Sep 2024 11:03:45 +0200
+Subject: [PATCH 6/9] Fix Entity access
 
 ---
  .../me/pikamug/quests/quests/BukkitQuest.java | 100 +++++++++---------
  1 file changed, 50 insertions(+), 50 deletions(-)
 
 diff --git a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
-index 6a9ecefbb..ec5c88718 100644
+index 2c1d3598f..5b5b9c67b 100644
 --- a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
 +++ b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
 @@ -50,11 +50,7 @@ import me.pikamug.quests.util.BukkitItemUtil;

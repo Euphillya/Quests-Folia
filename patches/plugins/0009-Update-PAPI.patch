@@ -1,0 +1,25 @@
+From 8cad7bbf02a522063f7dd986d241750eb1e7d91f Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sat, 28 Sep 2024 11:25:15 +0200
+Subject: [PATCH 9/9] Update PAPI
+
+---
+ core/pom.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/pom.xml b/core/pom.xml
+index ec6369c55..9c862eb7a 100644
+--- a/core/pom.xml
++++ b/core/pom.xml
+@@ -128,7 +128,7 @@
+         <dependency>
+             <groupId>me.clip</groupId>
+             <artifactId>placeholderapi</artifactId>
+-            <version>2.11.2</version>
++            <version>2.11.6</version>
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+-- 
+2.45.1.windows.1
+

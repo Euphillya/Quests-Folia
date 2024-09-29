@@ -1,7 +1,7 @@
-From d5e6dc29fea9ea70befea32ecdb400f6b6fc71fd Mon Sep 17 00:00:00 2001
+From b6742343d48ed888fd135db892050596e934390f Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 25 Aug 2024 09:20:33 +0200
-Subject: [PATCH 8/8] Localelib directly here
+Date: Sat, 28 Sep 2024 11:03:45 +0200
+Subject: [PATCH 8/9] Localelib directly here
 
 ---
  core/pom.xml                                             | 9 +++++----

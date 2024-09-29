@@ -1,7 +1,7 @@
-From 8a7b147214a2a13eb0715faab28b2df25cfaac2b Mon Sep 17 00:00:00 2001
+From a44860277d0c1d72e7cb6d3120cc0cb0bfc0d27c Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 25 Aug 2024 09:20:33 +0200
-Subject: [PATCH 7/8] Folia Supported
+Date: Sat, 28 Sep 2024 11:03:45 +0200
+Subject: [PATCH 7/9] Folia Supported
 
 ---
  core/src/main/resources/plugin.yml | 1 +

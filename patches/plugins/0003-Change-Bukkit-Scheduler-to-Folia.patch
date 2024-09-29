@@ -1,7 +1,7 @@
-From 4d3e6915b57fbf598183bf8426208addfed2c146 Mon Sep 17 00:00:00 2001
+From 15d4c7c337e5ad12676bc6dc6821c2a7d2900be8 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 25 Aug 2024 09:20:32 +0200
-Subject: [PATCH 3/8] Change Bukkit Scheduler to Folia
+Date: Sat, 28 Sep 2024 11:03:44 +0200
+Subject: [PATCH 3/9] Change Bukkit Scheduler to Folia
 
 ---
  .../me/pikamug/quests/player/Quester.java     |   6 +-
@@ -13,12 +13,12 @@ Subject: [PATCH 3/8] Change Bukkit Scheduler to Folia
  .../dependencies/BukkitDependencies.java      |  10 +-
  .../listeners/BukkitPlayerListener.java       |  22 +-
  .../listeners/BukkitZnpcsApiListener.java     |   4 +-
- .../pikamug/quests/player/BukkitQuester.java  |  30 +-
+ .../pikamug/quests/player/BukkitQuester.java  |  28 +-
  .../me/pikamug/quests/quests/BukkitQuest.java |  18 +-
  .../quests/statistics/BukkitMetrics.java      |   2 +-
  .../quests/tasks/BukkitActionTimer.java       |   5 +-
  .../quests/util/BukkitUpdateChecker.java      |   2 +-
- 14 files changed, 345 insertions(+), 63 deletions(-)
+ 14 files changed, 344 insertions(+), 62 deletions(-)
  create mode 100644 api/src/main/java/me/pikamug/quests/util/FoliaRunnable.java
 
 diff --git a/api/src/main/java/me/pikamug/quests/player/Quester.java b/api/src/main/java/me/pikamug/quests/player/Quester.java
@@ -599,7 +599,7 @@ index e0ca9c3a7..07ae492f1 100644
  
      private String extracted(final Quester quester) {
 diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-index 35b688549..e3ee28355 100644
+index 1221c8b26..0f0b8164c 100644
 --- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 +++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 @@ -106,7 +106,7 @@ public class BukkitQuester implements Quester {
@@ -649,7 +649,7 @@ index 35b688549..e3ee28355 100644
 +                    getPlayer().getScheduler().run(plugin, (task1) -> finishObjective(quest,
                              new BukkitObjective(type, null, new ItemStack(Material.AIR, 1),
 -                            new ItemStack(Material.AIR, 1)), null, null, null, null, null, display, null));
-+                            new ItemStack(Material.AIR, 1)), null, null, null, null, null, display, null), null);
++                                    new ItemStack(Material.AIR, 1)), null, null, null, null, null, display, null), null);
  
                      final int finalIndex = index;
                      dispatchedQuestIDs.addAll(dispatchMultiplayerEverything(quest, type,
@@ -696,19 +696,17 @@ index 35b688549..e3ee28355 100644
              final LinkedList<String> list = currentQuests.keySet().stream()
                      .sorted(Comparator.comparing(Quest::getName)).map(Quest::getId)
                      .collect(Collectors.toCollection(LinkedList::new));
-@@ -4354,8 +4354,8 @@ public class BukkitQuester implements Quester {
+@@ -4354,7 +4354,7 @@ public class BukkitQuester implements Quester {
                          .replace("<quest>", quest.getName()));
                  }
                  if (stage.getFailAction() != null) {
--                    plugin.getServer().getScheduler().runTask(plugin, () ->
--                            getCurrentStage(quest).getFailAction().fire(this, quest));
-+                    getPlayer().getScheduler().run(plugin, (task1) ->
-+                            getCurrentStage(quest).getFailAction().fire(this, quest), null);
+-                    plugin.getServer().getScheduler().runTask(plugin, () -> stage.getFailAction().fire(this, quest));
++                    getPlayer().getScheduler().run(plugin, (task1) -> stage.getFailAction().fire(this, quest), null);
                  }
                  hardQuit(quest);
              } else if (giveReason) {
 diff --git a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
-index 9250018d4..6a9ecefbb 100644
+index c8aa77306..2c1d3598f 100644
 --- a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
 +++ b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
 @@ -284,9 +284,9 @@ public class BukkitQuest implements Quest {
@@ -762,7 +760,7 @@ index 9250018d4..6a9ecefbb 100644
                          Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command));
              }
              issuedReward = true;
-@@ -1118,9 +1118,9 @@ public class BukkitQuest implements Quest {
+@@ -1125,9 +1125,9 @@ public class BukkitQuest implements Quest {
          if (preEvent.isCancelled()) {
              return;
          }
