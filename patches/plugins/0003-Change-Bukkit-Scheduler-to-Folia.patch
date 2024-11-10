@@ -1,6 +1,6 @@
-From 15d4c7c337e5ad12676bc6dc6821c2a7d2900be8 Mon Sep 17 00:00:00 2001
+From c4640c7d31c12c35c2eb59954aae00b884f386c2 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sat, 28 Sep 2024 11:03:44 +0200
+Date: Sun, 10 Nov 2024 01:28:28 +0100
 Subject: [PATCH 3/9] Change Bukkit Scheduler to Folia
 
 ---
@@ -599,7 +599,7 @@ index e0ca9c3a7..07ae492f1 100644
  
      private String extracted(final Quester quester) {
 diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-index 1221c8b26..0f0b8164c 100644
+index c5061bd13..75beef7f6 100644
 --- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 +++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 @@ -106,7 +106,7 @@ public class BukkitQuester implements Quester {
@@ -632,7 +632,7 @@ index 1221c8b26..0f0b8164c 100644
          this.timers.remove(timerId);
      }
  
-@@ -3120,7 +3120,7 @@ public class BukkitQuester implements Quester {
+@@ -3135,7 +3135,7 @@ public class BukkitQuester implements Quester {
      public void sayPassword(final Quest quest, final AsyncPlayerChatEvent evt) {
          final ObjectiveType type = ObjectiveType.PASSWORD;
          final Set<String> dispatchedQuestIDs = new HashSet<>();
@@ -641,7 +641,7 @@ index 1221c8b26..0f0b8164c 100644
              final BukkitQuesterPreUpdateObjectiveEvent preEvent = new BukkitQuesterPreUpdateObjectiveEvent(this, quest,
                      new BukkitObjective(type, null, 1, 1));
              plugin.getServer().getPluginManager().callEvent(preEvent);
-@@ -3132,9 +3132,9 @@ public class BukkitQuester implements Quester {
+@@ -3147,9 +3147,9 @@ public class BukkitQuester implements Quester {
                      final String display = getCurrentStage(quest).getPasswordDisplays().get(index);
                      bukkitQuestProgress.passwordsSaid.set(index, true);
  
@@ -653,7 +653,7 @@ index 1221c8b26..0f0b8164c 100644
  
                      final int finalIndex = index;
                      dispatchedQuestIDs.addAll(dispatchMultiplayerEverything(quest, type,
-@@ -3156,7 +3156,7 @@ public class BukkitQuester implements Quester {
+@@ -3171,7 +3171,7 @@ public class BukkitQuester implements Quester {
              final BukkitQuesterPostUpdateObjectiveEvent postEvent = new BukkitQuesterPostUpdateObjectiveEvent(this,
                      quest, new BukkitObjective(type, null, 1, 1));
              plugin.getServer().getPluginManager().callEvent(postEvent);
@@ -662,7 +662,7 @@ index 1221c8b26..0f0b8164c 100644
      }
  
      /**
-@@ -3830,10 +3830,10 @@ public class BukkitQuester implements Quester {
+@@ -3845,10 +3845,10 @@ public class BukkitQuester implements Quester {
       */
      public void startStageTimer(final Quest quest) {
          if (getQuestProgressOrDefault(quest).getDelayTimeLeft() > -1) {
@@ -675,7 +675,7 @@ index 1221c8b26..0f0b8164c 100644
                      (long) (getCurrentStage(quest).getDelay() * 0.02));
              if (getCurrentStage(quest).getDelayMessage() != null) {
                  final Player p = plugin.getServer().getPlayer(id);
-@@ -3962,9 +3962,9 @@ public class BukkitQuester implements Quester {
+@@ -3977,9 +3977,9 @@ public class BukkitQuester implements Quester {
              currentQuests.remove(quest);
              questProgress.remove(quest);
              if (!timers.isEmpty()) {
@@ -687,7 +687,7 @@ index 1221c8b26..0f0b8164c 100644
                          timers.remove(entry.getKey());
                      }
                  }
-@@ -4098,7 +4098,7 @@ public class BukkitQuester implements Quester {
+@@ -4113,7 +4113,7 @@ public class BukkitQuester implements Quester {
          if (getPlayer() == null || !getPlayer().hasPermission("quests.compass")) {
              return;
          }
@@ -696,7 +696,7 @@ index 1221c8b26..0f0b8164c 100644
              final LinkedList<String> list = currentQuests.keySet().stream()
                      .sorted(Comparator.comparing(Quest::getName)).map(Quest::getId)
                      .collect(Collectors.toCollection(LinkedList::new));
-@@ -4354,7 +4354,7 @@ public class BukkitQuester implements Quester {
+@@ -4369,7 +4369,7 @@ public class BukkitQuester implements Quester {
                          .replace("<quest>", quest.getName()));
                  }
                  if (stage.getFailAction() != null) {

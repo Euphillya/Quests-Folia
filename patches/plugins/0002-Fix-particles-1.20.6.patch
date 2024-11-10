@@ -1,6 +1,6 @@
-From 3855220b1a3566884bbcbf8ff3011fe36aee4804 Mon Sep 17 00:00:00 2001
+From 2bcdbaf65fcb8d99e55c531af4b13a3a468448f3 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sat, 28 Sep 2024 11:03:44 +0200
+Date: Sun, 10 Nov 2024 01:28:28 +0100
 Subject: [PATCH 2/9] Fix particles 1.20.6
 
 ---
