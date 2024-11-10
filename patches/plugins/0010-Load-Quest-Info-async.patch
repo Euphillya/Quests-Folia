@@ -1,0 +1,38 @@
+From 19faa7da42e74cb8cfbc1fc9bbcae27512035d74 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 10 Nov 2024 01:41:12 +0100
+Subject: [PATCH 10/10] Load Quest Info async
+
+---
+ .../src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+index d880c48e9..608902cce 100644
+--- a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
++++ b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+@@ -661,7 +661,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+      * At startup, this lets soft-depends (namely Citizens) fully load first
+      */
+     private void delayLoadQuestInfo() {
+-        getServer().getGlobalRegionScheduler().runDelayed(this, (task) -> {
++        getServer().getAsyncScheduler().runDelayed(this, (task) -> {
+             conditionLoader.init();
+             actionLoader.init();
+             questLoader.init();
+@@ -693,10 +693,10 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+             customLoader.init();
+             questLoader.importQuests();
+             if (getConfigSettings().canDisableCommandFeedback()) {
+-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule sendCommandFeedback false");
++                getServer().getGlobalRegionScheduler().execute(this, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule sendCommandFeedback false"));
+             }
+             loading = false;
+-        }, 5L);
++        }, 5L*20, java.util.concurrent.TimeUnit.MILLISECONDS);
+     }
+ 
+     /**
+-- 
+2.45.1.windows.1
+

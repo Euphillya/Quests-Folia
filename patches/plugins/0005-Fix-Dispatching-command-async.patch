@@ -1,7 +1,7 @@
 From b7ca725580026ec53bf89005c8bd8b94b2da8153 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Sun, 10 Nov 2024 01:28:28 +0100
-Subject: [PATCH 5/9] Fix Dispatching command async
+Subject: [PATCH 05/10] Fix Dispatching command async
 
 ---
  core/src/main/java/me/pikamug/quests/player/BukkitQuester.java | 2 ++
