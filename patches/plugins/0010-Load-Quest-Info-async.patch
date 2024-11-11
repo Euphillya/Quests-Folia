@@ -1,7 +1,7 @@
 From 19faa7da42e74cb8cfbc1fc9bbcae27512035d74 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Sun, 10 Nov 2024 01:41:12 +0100
-Subject: [PATCH 10/10] Load Quest Info async
+Subject: [PATCH 10/11] Load Quest Info async
 
 ---
  .../src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java | 6 +++---

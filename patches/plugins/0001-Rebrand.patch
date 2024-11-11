@@ -1,7 +1,7 @@
 From 9e384d589059cadca5590e62be4fc07d9b4c2f8a Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Sun, 10 Nov 2024 01:28:27 +0100
-Subject: [PATCH 01/10] Rebrand
+Subject: [PATCH 01/11] Rebrand
 
 ---
  api/pom.xml  | 22 +++++++++++++---------
