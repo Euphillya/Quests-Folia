@@ -1,7 +1,7 @@
-From 9e384d589059cadca5590e62be4fc07d9b4c2f8a Mon Sep 17 00:00:00 2001
+From 92fcdda30c684387f7798db939f7f810232cd9c2 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 10 Nov 2024 01:28:27 +0100
-Subject: [PATCH 01/11] Rebrand
+Date: Wed, 19 Feb 2025 16:36:16 +0100
+Subject: [PATCH 1/8] Rebrand
 
 ---
  api/pom.xml  | 22 +++++++++++++---------
@@ -11,7 +11,7 @@ Subject: [PATCH 01/11] Rebrand
  4 files changed, 32 insertions(+), 24 deletions(-)
 
 diff --git a/api/pom.xml b/api/pom.xml
-index e8629409c..e472c73f9 100644
+index ef01f4a8d..3fc3e6887 100644
 --- a/api/pom.xml
 +++ b/api/pom.xml
 @@ -19,13 +19,17 @@
@@ -74,7 +74,7 @@ index e8629409c..e472c73f9 100644
                      <execution>
                          <phase>package</phase>
 diff --git a/core/pom.xml b/core/pom.xml
-index 236dd4f5f..174da418d 100644
+index c7c700e61..6e60319f1 100644
 --- a/core/pom.xml
 +++ b/core/pom.xml
 @@ -70,13 +70,17 @@
@@ -159,7 +159,7 @@ index 5f0edb02b..f4163ff02 100644
              <groupId>me.pikamug.quests</groupId>
              <artifactId>quests-core</artifactId>
 diff --git a/pom.xml b/pom.xml
-index 371463c73..e30c958f1 100644
+index ce1d2136d..86bc88cee 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -13,9 +13,9 @@
@@ -186,5 +186,5 @@ index 371463c73..e30c958f1 100644
  
      <repositories>
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 

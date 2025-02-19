@@ -1,7 +1,7 @@
-From f0fbca6eb313288d4918f23ef86c2591b02b67ba Mon Sep 17 00:00:00 2001
+From 353eac3a5506e550497035239988f4e853d6c9d7 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 10 Nov 2024 01:28:29 +0100
-Subject: [PATCH 07/11] Folia Supported
+Date: Wed, 19 Feb 2025 16:36:17 +0100
+Subject: [PATCH 6/8] Folia Supported
 
 ---
  core/src/main/resources/plugin.yml | 1 +
@@ -20,5 +20,5 @@ index ebe4c3da4..1b7062f87 100644
    quests.*:
      description: Access ALL Quests functionality
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 

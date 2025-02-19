@@ -1,30 +1,17 @@
-From 6f7f70df0e594f65c796cfe6b739bb73a412a5ac Mon Sep 17 00:00:00 2001
+From 1812e34c9256524b5e07710c91bdbc223def5453 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 10 Nov 2024 01:28:29 +0100
-Subject: [PATCH 06/11] Fix Entity access
+Date: Wed, 19 Feb 2025 16:36:17 +0100
+Subject: [PATCH 5/8] Fix Entity access
 
 ---
- .../me/pikamug/quests/quests/BukkitQuest.java | 100 +++++++++---------
- 1 file changed, 50 insertions(+), 50 deletions(-)
+ .../me/pikamug/quests/quests/BukkitQuest.java | 91 ++++++++++---------
+ 1 file changed, 46 insertions(+), 45 deletions(-)
 
 diff --git a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
-index 2c1d3598f..5b5b9c67b 100644
+index 7440d58bc..5737344f2 100644
 --- a/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
 +++ b/core/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
-@@ -50,11 +50,7 @@ import me.pikamug.quests.util.BukkitItemUtil;
- import me.pikamug.quests.util.BukkitMiscUtil;
- import me.pikamug.quests.util.BukkitLang;
- import me.pikamug.quests.util.RomanNumeral;
--import org.bukkit.Bukkit;
--import org.bukkit.ChatColor;
--import org.bukkit.DyeColor;
--import org.bukkit.Location;
--import org.bukkit.OfflinePlayer;
-+import org.bukkit.*;
- import org.bukkit.enchantments.Enchantment;
- import org.bukkit.entity.Entity;
- import org.bukkit.entity.EntityType;
-@@ -441,108 +437,112 @@ public class BukkitQuest implements Quest {
+@@ -403,108 +403,109 @@ public class BukkitQuest implements Quest {
                      return;
                  }
                  final Location source = quester.getPlayer().getLocation();
@@ -70,11 +57,10 @@ index 2c1d3598f..5b5b9c67b 100644
                      return;
                  }
 -                for (final Entity e : source.getWorld().getEntities()) {
-+                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {
-+                for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
++                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
                      if (!e.getType().equals(et)) {
 -                        continue;
-+                         return;
++                        return;
                      }
                      final double new_distance = e.getLocation().distanceSquared(source);
 -                    if (new_distance < old_distance) {
@@ -105,8 +91,7 @@ index 2c1d3598f..5b5b9c67b 100644
                      return;
                  }
 -                for (final Entity e : source.getWorld().getEntities()) {
-+                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {
-+                    for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
++                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> { for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
                      if (!e.getType().equals(et)) {
 -                        continue;
 +                        return;
@@ -140,8 +125,7 @@ index 2c1d3598f..5b5b9c67b 100644
                      return;
                  }
 -                for (final Entity e : source.getWorld().getEntities()) {
-+                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {
-+                    for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
++                for (final Chunk chunk : source.getWorld().getLoadedChunks()) { Bukkit.getRegionScheduler().execute(plugin, chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {for (final Entity e : chunk.getEntities()) e.getScheduler().run(plugin, scheduledTask -> {
                      if (!e.getType().equals(EntityType.SHEEP)) {
 -                        continue;
 +                        return;
@@ -174,14 +158,14 @@ index 2c1d3598f..5b5b9c67b 100644
 -                if (targetLocation.getWorld().getName().equals(quester.getPlayer().getWorld().getName())) {
 -                    final Location lockedTarget = new Location(targetLocation.getWorld(), targetLocation.getX(),
 -                            targetLocation.getY(), targetLocation.getZ());
-+                Location finalTargetLocation = targetLocation;
++                final Location finalTargetLocation = targetLocation;
 +                if (finalTargetLocation.getWorld().getName().equals(quester.getPlayer().getWorld().getName())) {quester.getPlayer().getScheduler().run(plugin, scheduledTask -> {
 +                    final Location lockedTarget = new Location(finalTargetLocation.getWorld(), finalTargetLocation.getX(),
 +                            finalTargetLocation.getY(), finalTargetLocation.getZ());
                      final QuestUpdateCompassEvent event = new QuestUpdateCompassEvent(quest, quester, lockedTarget);
                      plugin.getServer().getPluginManager().callEvent(event);
                      if (event.isCancelled()) {
-@@ -550,7 +550,7 @@ public class BukkitQuest implements Quest {
+@@ -512,7 +513,7 @@ public class BukkitQuest implements Quest {
                      }
                      quester.setCompassTarget(this);
                      quester.getPlayer().setCompassTarget(lockedTarget);
@@ -191,5 +175,5 @@ index 2c1d3598f..5b5b9c67b 100644
          });
          return true;
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 

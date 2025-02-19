@@ -13,12 +13,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Setup Java
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
@@ -33,10 +33,10 @@ jobs:
        cd LocaleLib-Folia
        mvn clean compile package
        mvn install:install-file \
-         -Dfile="target/LocaleLib-4.0.0-Folia.jar" \
+         -Dfile="target/LocaleLib-4.1.0-Folia.jar" \
          -DgroupId="fr.euphyllia" \
          -DartifactId="localelib" \
-         -Dversion="4.0.0-Folia" \
+         -Dversion="4.1.0-Folia" \
          -Dpackaging="jar"
        cd ..
 
@@ -55,7 +55,7 @@ jobs:
         mvn clean compile install
 
     - name: Upload Jar file
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: compiled-jar
         path: Quests-Patchs/dist/target/*.jar

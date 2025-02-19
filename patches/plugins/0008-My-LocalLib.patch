@@ -1,15 +1,15 @@
-From b49770c816891d6288991b4a5791d314d6320d8a Mon Sep 17 00:00:00 2001
+From bcecb189f5d8aa9f0b7a86f8a16052e6b297f121 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 10 Nov 2024 01:28:29 +0100
-Subject: [PATCH 08/11] Localelib directly here
+Date: Wed, 19 Feb 2025 16:39:20 +0100
+Subject: [PATCH 8/8] My LocalLib
 
 ---
  core/pom.xml                                             | 9 +++++----
- .../main/java/me/pikamug/quests/BukkitQuestsPlugin.java  | 5 +++--
- 2 files changed, 8 insertions(+), 6 deletions(-)
+ .../main/java/me/pikamug/quests/BukkitQuestsPlugin.java  | 2 +-
+ 2 files changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/core/pom.xml b/core/pom.xml
-index 174da418d..ec6369c55 100644
+index 6e60319f1..b2e80f0c9 100644
 --- a/core/pom.xml
 +++ b/core/pom.xml
 @@ -168,9 +168,10 @@
@@ -18,10 +18,10 @@ index 174da418d..ec6369c55 100644
          <dependency>
 -            <groupId>me.pikamug.localelib</groupId>
 -            <artifactId>LocaleLib</artifactId>
--            <version>4.0.0</version>
+-            <version>4.1.0</version>
 +            <groupId>fr.euphyllia</groupId>
 +            <artifactId>localelib</artifactId>
-+            <version>4.0.0-Folia</version>
++            <version>4.1.0-Folia</version>
 +            <scope>compile</scope>
          </dependency>
          <dependency>
@@ -36,23 +36,18 @@ index 174da418d..ec6369c55 100644
                              <include>org.slf4j:slf4j-simple</include>
                              <include>org.slf4j:slf4j-api</include>
 diff --git a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
-index 1a975317e..d880c48e9 100644
+index 813cde977..3b7bb1d08 100644
 --- a/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
 +++ b/core/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
-@@ -143,10 +143,11 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+@@ -123,7 +123,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
          questLoader = new BukkitQuestYamlStorage(this);
          try {
              Class.forName("me.pikamug.quests.libs.localelib.LocaleManager");
 -            localeManager = new LocaleManager();
 +            localeManager = new LocaleManager(this);
-             BlockItemStacks.init(!localeManager.isBelow113());
--        } catch (final Exception ignored) {
-+        } catch (final Exception exception) {
+         } catch (final Exception ignored) {
              getLogger().warning("LocaleLib not present! Is this a debug environment?");
-+            exception.printStackTrace();
          }
- 
-         convoListener = new BukkitConvoListener();
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 

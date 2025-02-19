@@ -1,7 +1,7 @@
-From 2bcdbaf65fcb8d99e55c531af4b13a3a468448f3 Mon Sep 17 00:00:00 2001
+From 308539d56c3d2a1c3a22294983901cfdca101fe2 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Sun, 10 Nov 2024 01:28:28 +0100
-Subject: [PATCH 02/11] Fix particles 1.20.6
+Date: Wed, 19 Feb 2025 16:36:16 +0100
+Subject: [PATCH 2/8] Fix particles 1.20.6
 
 ---
  .../nms/BukkitParticleProvider_Modern.java    | 19 ++++++++++---------
@@ -41,5 +41,5 @@ index 0c21d01b0..132972918 100644
  
      @Override
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 

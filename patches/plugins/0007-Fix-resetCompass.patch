@@ -1,17 +1,17 @@
-From 580ae41c2d65e7e844e00294ff2fe39345e4e1d3 Mon Sep 17 00:00:00 2001
+From 8fd8df17461409d45e44b8e67524e624d95a185b Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Mon, 11 Nov 2024 18:19:38 +0100
-Subject: [PATCH 11/11] Fix resetCompass
+Date: Wed, 19 Feb 2025 16:36:17 +0100
+Subject: [PATCH 7/8] Fix resetCompass
 
 ---
  .../java/me/pikamug/quests/player/BukkitQuester.java | 12 +++++++-----
  1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-index 09987250e..bf8a4eb22 100644
+index f9f7efc96..9bc4ea867 100644
 --- a/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
 +++ b/core/src/main/java/me/pikamug/quests/player/BukkitQuester.java
-@@ -4076,11 +4076,13 @@ public class BukkitQuester implements Quester {
+@@ -4173,11 +4173,13 @@ public class BukkitQuester implements Quester {
              return;
          }
  
@@ -31,5 +31,5 @@ index 09987250e..bf8a4eb22 100644
  
      /**
 -- 
-2.45.1.windows.1
+2.48.1.windows.1
 
