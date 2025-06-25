@@ -1,24 +1,24 @@
-From 353eac3a5506e550497035239988f4e853d6c9d7 Mon Sep 17 00:00:00 2001
+From 354b1b09a51bf69cd1ea0f2fb81a573a88cc5ef8 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 19 Feb 2025 16:36:17 +0100
-Subject: [PATCH 6/8] Folia Supported
+Date: Wed, 25 Jun 2025 17:38:34 +0200
+Subject: [PATCH 6/7] Folia Supported
 
 ---
  core/src/main/resources/plugin.yml | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/core/src/main/resources/plugin.yml b/core/src/main/resources/plugin.yml
-index ebe4c3da4..1b7062f87 100644
+index 17f97e71a..e0b91694b 100644
 --- a/core/src/main/resources/plugin.yml
 +++ b/core/src/main/resources/plugin.yml
-@@ -6,6 +6,7 @@ description: An extensive questing system.
+@@ -2,6 +2,7 @@ name: Quests
+ main: me.pikamug.quests.BukkitQuestsPlugin
+ version: ${project.version}-b${env.BUILD_NUMBER}
+ api-version: 1.13
++folia-supported: true
+ description: An extensive questing system.
  website: https://github.com/PikaMug/Quests
  author: PikaMug
- softdepend: [AstralBooks, Citizens, Denizen, GPS, Heroes, mcMMO, Parties, PlaceholderAPI, Unite, Vault, WorldGuard, ZNPCsPlus]
-+folia-supported: true
- permissions:
-   quests.*:
-     description: Access ALL Quests functionality
 -- 
-2.48.1.windows.1
+2.50.0.windows.1
 
