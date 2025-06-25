@@ -33,10 +33,10 @@ jobs:
        cd LocaleLib-Folia
        mvn clean compile package
        mvn install:install-file \
-         -Dfile="target/LocaleLib-4.1.0-Folia.jar" \
-         -DgroupId="fr.euphyllia" \
-         -DartifactId="localelib" \
-         -Dversion="4.1.0-Folia" \
+         -Dfile="target/LocaleLib-4.1.2-Folia.jar" \
+         -DgroupId="me.pikamug.localelib" \
+         -DartifactId="LocaleLib" \
+         -Dversion="4.1.2-Folia" \
          -Dpackaging="jar"
        cd ..
 

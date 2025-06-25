@@ -1,7 +1,7 @@
 From a5b5db7da6d9a862360804c9fde8647e982cbcc5 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Wed, 25 Jun 2025 17:38:34 +0200
-Subject: [PATCH 7/7] Fix resetCompass
+Subject: [PATCH 7/8] Fix resetCompass
 
 ---
  .../java/me/pikamug/quests/player/BukkitQuester.java | 12 +++++++-----

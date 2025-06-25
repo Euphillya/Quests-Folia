@@ -1,7 +1,7 @@
 From 71a12b55dc4278f8d600fad815cd6e7a756ce3cf Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Wed, 25 Jun 2025 17:38:34 +0200
-Subject: [PATCH 4/7] TeleportAsync
+Subject: [PATCH 4/8] TeleportAsync
 
 ---
  core/src/main/java/me/pikamug/quests/actions/BukkitAction.java | 2 +-

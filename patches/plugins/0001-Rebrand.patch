@@ -1,7 +1,7 @@
 From bed334078315476630152d603b9d5c90b75b2d13 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Wed, 25 Jun 2025 17:38:33 +0200
-Subject: [PATCH 1/7] Rebrand
+Subject: [PATCH 1/8] Rebrand
 
 ---
  api/pom.xml  | 22 +++++++++++++---------

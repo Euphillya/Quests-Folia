@@ -1,7 +1,7 @@
 From e83569ee3576343cf2bc0f9a53b6b1533c6731fe Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
 Date: Wed, 25 Jun 2025 17:38:33 +0200
-Subject: [PATCH 2/7] Fix particles 1.20.6
+Subject: [PATCH 2/8] Fix particles 1.20.6
 
 ---
  .../nms/BukkitParticleProvider_Modern.java    | 19 ++++++++++---------
