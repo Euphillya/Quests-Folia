@@ -47,3 +47,15 @@ tasks.register("updateUpstream") {
         }
     }
 }
+
+tasks.register("buildQuests") {
+    group = "build"
+    description = "Compile LocaleLib patché puis le jar final Quests"
+    dependsOn(gradle.includedBuild("Quests-Patched").task(":quests-dist:assemble"))
+}
+
+tasks.register("buildLocaleLib") {
+    group = "build"
+    description = "Compile LocaleLib patché seul"
+    dependsOn(gradle.includedBuild("LocaleLib-Patched").task(":build"))
+}

@@ -4,6 +4,22 @@ Date: Sun, 5 Jul 2026 21:32:40 +0200
 Subject: [PATCH] Add Build Gradle
 
 
+diff --git a/.gitignore b/.gitignore
+index 5ff6309b7199129c1afe4f4ec1906e640bec48c6..8a3ce194168e38d898a7bba9a48ee06a1218ea27 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -35,4 +35,8 @@ build/
+ .vscode/
+ 
+ ### Mac OS ###
+-.DS_Store
+\ No newline at end of file
++.DS_Store
++
++### Gradle ###
++.gradle/
++!gradle/wrapper/gradle-wrapper.jar
+\ No newline at end of file
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
 index 0000000000000000000000000000000000000000..19c1a61ae7e3d8db672cbba89af32e691b001756
@@ -51,20 +67,4 @@ index 0000000000000000000000000000000000000000..7dfb6e97edb6411ae06630fe6b9c2eb9
 +++ b/settings.gradle.kts
 @@ -0,0 +1 @@
 +rootProject.name = "LocaleLib"
-\ No newline at end of file
-diff --git a/.gitignore b/.gitignore
-index 5ff6309b7199129c1afe4f4ec1906e640bec48c6..8a3ce194168e38d898a7bba9a48ee06a1218ea27 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -35,4 +35,8 @@ build/
- .vscode/
-
- ### Mac OS ###
--.DS_Store
-\ No newline at end of file
-+.DS_Store
-+
-+### Gradle ###
-+.gradle/
-+!gradle/wrapper/gradle-wrapper.jar
 \ No newline at end of file

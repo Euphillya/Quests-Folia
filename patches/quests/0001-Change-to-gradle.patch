@@ -1,0 +1,240 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 5 Jul 2026 22:09:45 +0200
+Subject: [PATCH] Change to gradle
+
+
+diff --git a/api/build.gradle.kts b/api/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..3d2250fbdb4f05775180ac03a8738ec57158b21c
+--- /dev/null
++++ b/api/build.gradle.kts
+@@ -0,0 +1,38 @@
++plugins {
++    id("com.gradleup.shadow") version "9.4.3"
++}
++
++dependencies {
++    implementation("org.jetbrains:annotations:24.0.1")
++    implementation("com.mysql:mysql-connector-j:8.3.0") {
++        exclude(group = "com.google.protobuf", module = "protobuf-java")
++    }
++
++    implementation("com.zaxxer:HikariCP:4.0.3") {
++        exclude(group = "org.slf4j", module = "slf4j-api")
++    }
++}
++
++tasks.shadowJar {
++    archiveClassifier = ""
++
++    dependencies {
++        include(dependency("com.zaxxer:HikariCP"))
++        include(dependency("com.mysql:mysql-connector-j"))
++    }
++
++    exclude("META-INF/*.MF")
++    exclude("INFO_SRC")
++    exclude("INFO_BIN")
++
++    relocate("com.zaxxer.hikari", "me.pikamug.quests.libs.hikari")
++    relocate("com.mysql", "me.pikamug.quests.libs.mysql")
++}
++
++tasks.jar {
++    enabled = false
++}
++
++tasks.assemble {
++    dependsOn(tasks.shadowJar)
++}
+\ No newline at end of file
+diff --git a/build.gradle.kts b/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..618a79fae3a4bec64154c14181be9449507a4c1f
+--- /dev/null
++++ b/build.gradle.kts
+@@ -0,0 +1,29 @@
++plugins {
++    id("com.gradleup.shadow") version "9.4.3" apply false
++}
++
++subprojects {
++    apply(plugin = "java-library")
++
++    group = "me.pikamug.quests"
++    version = rootProject.property("revision") as String
++
++    repositories {
++        mavenCentral()
++        maven("https://repo.papermc.io/repository/maven-public/")
++        maven("https://oss.sonatype.org/content/repositories/snapshots/")
++    }
++
++    extensions.configure<JavaPluginExtension> {
++        sourceCompatibility = JavaVersion.VERSION_21
++        targetCompatibility = JavaVersion.VERSION_21
++    }
++
++    tasks.withType<JavaCompile>().configureEach {
++        options.encoding = "UTF-8"
++    }
++
++    tasks.withType<ProcessResources>().configureEach {
++        filteringCharset = "UTF-8"
++    }
++}
+\ No newline at end of file
+diff --git a/bukkit/build.gradle.kts b/bukkit/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..47949cb3003916d0091ed363a6885e83ec5f0510
+--- /dev/null
++++ b/bukkit/build.gradle.kts
+@@ -0,0 +1,98 @@
++plugins {
++    `java-library`
++    id("com.gradleup.shadow")
++}
++
++repositories {
++    // ConversationAPI, mcMMO Classic, PhatLoots, Unite, ZNPCsPlus
++    maven("https://jitpack.io")
++    // LocaleLib, spigot-book-api
++    maven("https://repo.codemc.org/repository/maven-public/")
++    // Citizens, Denizen
++    maven("https://repo.citizensnpcs.co/")
++    // WorldEdit, WorldGuard
++    maven("https://maven.enginehub.org/repo/")
++    // Parties
++    maven("https://repo.alessiodp.com/releases/")
++    // PlaceholderAPI
++    maven("https://repo.extendedclip.com/releases/")
++    // Heroes, Vault
++    maven("https://nexus.hc.to/content/repositories/pub_releases/")
++    // PacketEvents pour ZNPCsPlus
++    maven("https://repo.codemc.io/repository/maven-snapshots/")
++    // Pyr's Repo (ZNPCsPlus 2.X)
++    maven("https://repo.pyr.lol/snapshots")
++}
++
++dependencies {
++    api(project(":quests-api"))
++
++    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
++    compileOnly("net.citizensnpcs:citizensapi:2.0.30-SNAPSHOT")
++    compileOnly("com.denizenscript:denizen:1.2.5-SNAPSHOT")
++    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
++    compileOnly("com.github.mcMMO-Dev:mcMMO-Classic:1.6.1")
++    compileOnly("com.herocraftonline.heroes:Heroes:1.9.26-RELEASE")
++    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.8")
++    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.5-SNAPSHOT")
++    compileOnly("me.clip:placeholderapi:2.11.6")
++    compileOnly("com.alessiodp.parties:parties-api:3.2.9")
++    compileOnly("com.github.retrooper.packetevents:spigot:2.0.0-SNAPSHOT")
++    compileOnly("com.github.Pyrbu:ZNPCsPlus:271b087586")
++    compileOnly("lol.pyr:znpcsplus-api:2.0.0-SNAPSHOT")
++    compileOnly("com.github.PikaMug:Unite:1.2.0")
++    compileOnly("org.apache.logging.log4j:log4j-core:2.17.1")
++
++    api("me.pikamug.localelib:LocaleLib:4.1.4")
++    api("xyz.upperlevel.spigot.book:spigot-book-api:1.6")
++    api("org.slf4j:slf4j-simple:1.7.33")
++    api("com.github.Browsit.ConversationAPI:conversation-bukkit:e12e4f20c9")
++}
++
++tasks.processResources {
++    filteringCharset = "UTF-8"
++
++    val props = mapOf("version" to project.version.toString())
++    val env = mapOf("BUILD_NUMBER" to (System.getenv("BUILD_NUMBER") ?: "local"))
++    inputs.properties(props + env)
++    filesMatching("plugin.yml") {
++        expand(
++            "project" to props,
++            "env" to env,
++        )
++    }
++
++    from(projectDir) {
++        include("README.md", "LICENSE.txt")
++    }
++}
++
++// Jar shadé intermédiaire (classifier "all"). Le jar final est produit par :quests-dist.
++tasks.shadowJar {
++    mergeServiceFiles() // ServicesResourceTransformer
++
++    dependencies {
++        include(project(":quests-api"))
++        include(dependency("me.pikamug.localelib:LocaleLib"))
++        include(dependency("com.github.Browsit.ConversationAPI:conversation-bukkit"))
++        include(dependency("org.slf4j:slf4j-simple"))
++        include(dependency("org.slf4j:slf4j-api"))
++        include(dependency("xyz.upperlevel.spigot.book:spigot-book-api"))
++        include(dependency("com.zaxxer:HikariCP"))
++        include(dependency("com.mysql:mysql-connector-j"))
++    }
++
++    exclude("META-INF/*.MF")
++    exclude("LICENSE")
++
++    relocate("org.browsit.conversation", "me.pikamug.quests.libs.conversation")
++    relocate("org.browsit.libs.kyori", "me.pikamug.quests.libs.kyori")
++    relocate("me.pikamug.localelib", "me.pikamug.quests.libs.localelib")
++    relocate("org.slf4j", "me.pikamug.quests.libs.slf4j")
++    relocate("xyz.upperlevel.spigot.book", "me.pikamug.quests.libs.bookutil")
++    relocate("com.zaxxer.hikari", "me.pikamug.quests.libs.hikari")
++    relocate("com.mysql", "me.pikamug.quests.libs.mysql")
++
++    exclude("INFO_SRC")
++    exclude("INFO_BIN")
++}
+\ No newline at end of file
+diff --git a/dist/build.gradle.kts b/dist/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..7bc610e2f159cd3991956f950ff7025d43248408
+--- /dev/null
++++ b/dist/build.gradle.kts
+@@ -0,0 +1,19 @@
++
++
++val bukkitShadowJar = project(":quests-bukkit").tasks.named("shadowJar")
++
++val finalJar by tasks.registering(Copy::class) {
++    group = "build"
++    description = "Produit le jar final Quests-<version>.jar"
++    from(bukkitShadowJar)
++    into(layout.buildDirectory.dir("libs"))
++    rename { "Quests-${project.version}.jar" }
++}
++
++tasks.jar {
++    enabled = false
++}
++
++tasks.assemble {
++    dependsOn(finalJar)
++}
+\ No newline at end of file
+diff --git a/gradle.properties b/gradle.properties
+new file mode 100644
+index 0000000000000000000000000000000000000000..febda101262bbabc72fdb890534e71bdff0baa63
+--- /dev/null
++++ b/gradle.properties
+@@ -0,0 +1 @@
++revision=5.3.2
+\ No newline at end of file
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..89935484cf8b722b0e7cff3340203263ef57b7e6
+--- /dev/null
++++ b/settings.gradle.kts
+@@ -0,0 +1,7 @@
++rootProject.name = "Quests"
++
++include("api", "bukkit", "dist")
++
++project(":api").name = "quests-api"
++project(":bukkit").name = "quests-bukkit"
++project(":dist").name = "quests-dist"
+\ No newline at end of file
