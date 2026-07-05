@@ -1,3 +1,6 @@
 [submodule "Quests"]
 	path = Quests
 	url = https://github.com/PikaMug/Quests
+[submodule "LocaleLib"]
+	path = LocaleLib
+	url = https://github.com/PikaMug/LocaleLib
