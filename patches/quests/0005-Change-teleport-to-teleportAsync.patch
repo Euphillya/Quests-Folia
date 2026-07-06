@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Mon, 6 Jul 2026 16:33:02 +0200
+Subject: [PATCH] Change teleport to teleportAsync
+
+
+diff --git a/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index 1d84f5b8ede49c30f2477eca42ebd74112fa156c..d8a0f25dc4ce987240f438d96140936e08391999 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -26,6 +26,7 @@ import org.bukkit.Effect;
+ import org.bukkit.Location;
+ import org.bukkit.World;
+ import org.bukkit.entity.Player;
++import org.bukkit.event.player.PlayerTeleportEvent;
+ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.potion.PotionEffect;
+ 
+@@ -391,7 +392,7 @@ public class BukkitAction implements Action {
+                 plugin.getLogger().warning("Tried to fire Action " + name + " but player " + player.getUniqueId()
+                 + " was dead (known Bukkit limitation).");
+             } else {
+-                player.teleport(teleport);
++                player.teleportAsync(teleport, PlayerTeleportEvent.TeleportCause.PLUGIN);
+             }
+         }
+         if (book != null) {

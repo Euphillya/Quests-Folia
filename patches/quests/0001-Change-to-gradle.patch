@@ -6,49 +6,25 @@ Subject: [PATCH] Change to gradle
 
 diff --git a/api/build.gradle.kts b/api/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d2250fbdb4f05775180ac03a8738ec57158b21c
+index 0000000000000000000000000000000000000000..20f0f7fed961b909ea722216d9ab949a53ee82de
 --- /dev/null
 +++ b/api/build.gradle.kts
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,15 @@
 +plugins {
-+    id("com.gradleup.shadow") version "9.4.3"
++    `java-library`
 +}
 +
 +dependencies {
-+    implementation("org.jetbrains:annotations:24.0.1")
-+    implementation("com.mysql:mysql-connector-j:8.3.0") {
++    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
++
++    api("org.jetbrains:annotations:24.0.1")
++    api("com.mysql:mysql-connector-j:8.3.0") {
 +        exclude(group = "com.google.protobuf", module = "protobuf-java")
 +    }
-+
-+    implementation("com.zaxxer:HikariCP:4.0.3") {
++    api("com.zaxxer:HikariCP:4.0.3") {
 +        exclude(group = "org.slf4j", module = "slf4j-api")
 +    }
 +}
-+
-+tasks.shadowJar {
-+    archiveClassifier = ""
-+
-+    dependencies {
-+        include(dependency("com.zaxxer:HikariCP"))
-+        include(dependency("com.mysql:mysql-connector-j"))
-+    }
-+
-+    exclude("META-INF/*.MF")
-+    exclude("INFO_SRC")
-+    exclude("INFO_BIN")
-+
-+    relocate("com.zaxxer.hikari", "me.pikamug.quests.libs.hikari")
-+    relocate("com.mysql", "me.pikamug.quests.libs.mysql")
-+}
-+
-+tasks.jar {
-+    enabled = false
-+}
-+
-+tasks.assemble {
-+    dependsOn(tasks.shadowJar)
-+}
-\ No newline at end of file
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
 index 0000000000000000000000000000000000000000..618a79fae3a4bec64154c14181be9449507a4c1f

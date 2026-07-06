@@ -1,0 +1,15 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Mon, 6 Jul 2026 16:33:45 +0200
+Subject: [PATCH] Add folia supported in plugin.yml
+
+
+diff --git a/bukkit/src/main/resources/plugin.yml b/bukkit/src/main/resources/plugin.yml
+index 50c0b4a3685590b85c627e17b92657a07594f6a1..dfb03d93d16b74a11210cbee11104a4ed7b14f02 100644
+--- a/bukkit/src/main/resources/plugin.yml
++++ b/bukkit/src/main/resources/plugin.yml
+@@ -1,3 +1,4 @@
++folia-supported: true
+ name: Quests
+ main: me.pikamug.quests.BukkitQuestsPlugin
+ version: ${project.version}-b${env.BUILD_NUMBER}
