@@ -1,22 +1,18 @@
-From e83569ee3576343cf2bc0f9a53b6b1533c6731fe Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
-Date: Wed, 25 Jun 2025 17:38:33 +0200
-Subject: [PATCH 2/8] Fix particles 1.20.6
+Date: Mon, 6 Jul 2026 16:01:17 +0200
+Subject: [PATCH] Fix Particles
 
----
- .../nms/BukkitParticleProvider_Modern.java    | 19 ++++++++++---------
- 1 file changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/core/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java b/core/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
-index 0c21d01b0..132972918 100644
---- a/core/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
-+++ b/core/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
-@@ -23,18 +23,19 @@ class BukkitParticleProvider_Modern extends BukkitParticleProvider {
+diff --git a/bukkit/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java b/bukkit/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
+index 0c21d01b05e224af5918d2cf75c7238c661806d0..f8a4c5c93e7857635903c632bc634d158f980e7a 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
++++ b/bukkit/src/main/java/me/pikamug/quests/nms/BukkitParticleProvider_Modern.java
+@@ -23,18 +23,18 @@ class BukkitParticleProvider_Modern extends BukkitParticleProvider {
      private static final Map<BukkitPreBuiltParticle, Object> PARTICLES = new HashMap<>();
  
      static {
 -        PARTICLES.put(BukkitPreBuiltParticle.ENCHANT, Particle.ENCHANTMENT_TABLE);
-+        // Version 1.20.6+
 +        PARTICLES.put(BukkitPreBuiltParticle.ENCHANT, Particle.ENCHANT);
          PARTICLES.put(BukkitPreBuiltParticle.CRIT, Particle.CRIT);
 -        PARTICLES.put(BukkitPreBuiltParticle.SPELL, Particle.SPELL_INSTANT);
@@ -40,6 +36,3 @@ index 0c21d01b0..132972918 100644
      }
  
      @Override
--- 
-2.50.0.windows.1
-

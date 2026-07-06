@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 5 Jul 2026 22:02:31 +0200
+Subject: [PATCH] Set plugin
+
+
+diff --git a/src/main/java/me/pikamug/localelib/LocaleLib.java b/src/main/java/me/pikamug/localelib/LocaleLib.java
+index 3dafda9b67ec916a4644aaa2c6b360db65aefc50..c09bb204ea69e52a1d0f1ff9675cd3c51b0f2dea 100644
+--- a/src/main/java/me/pikamug/localelib/LocaleLib.java
++++ b/src/main/java/me/pikamug/localelib/LocaleLib.java
+@@ -33,6 +33,7 @@ public class LocaleLib extends JavaPlugin {
+     @Override
+     public void onEnable() {
+         manager = new LocaleManager();
++        manager.setPlugin(this);
+     }
+ 
+     @Override

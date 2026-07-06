@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Sun, 5 Jul 2026 22:24:50 +0200
+Subject: [PATCH] Add ignore
+
+
+diff --git a/.gitignore b/.gitignore
+index 554e8d9076f8dc9dc3912ea4c5807065ae8bb9c7..c2aa66936cfd046204c30f151e71951284292620 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -27,3 +27,7 @@ nbdist/
+ *.ctxt
+ hs_err_pid*
+ /target/
++
++### Gradle ###
++.gradle/
++!gradle/wrapper/gradle-wrapper.jar
+\ No newline at end of file

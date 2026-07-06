@@ -1,0 +1,580 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Mon, 6 Jul 2026 16:31:46 +0200
+Subject: [PATCH] Replace without check Scheduler Bukkit to Folia
+
+
+diff --git a/api/src/main/java/me/pikamug/quests/player/Quester.java b/api/src/main/java/me/pikamug/quests/player/Quester.java
+index 8118f00ff59d29042a4904289a387a524c646ac8..e43cb02157694cacacc3cafde8a706d717095ef7 100644
+--- a/api/src/main/java/me/pikamug/quests/player/Quester.java
++++ b/api/src/main/java/me/pikamug/quests/player/Quester.java
+@@ -58,11 +58,11 @@ public interface Quester extends Comparable<Quester> {
+      */
+     void setCompassTarget(final Quest quest);
+ 
+-    ConcurrentHashMap<Integer, Quest> getTimers();
++    ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> getTimers();
+ 
+-    void setTimers(final ConcurrentHashMap<Integer, Quest> timers);
++    void setTimers(final ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers);
+ 
+-    void removeTimer(final Integer timerId);
++    void removeTimer(final io.papermc.paper.threadedregions.scheduler.ScheduledTask timerId);
+ 
+     ConcurrentHashMap<Quest, Integer> getCurrentQuests();
+ 
+diff --git a/bukkit/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java b/bukkit/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+index 10f67b9189b4102afcd00a170b2c1d8033d5a45a..e13f6c47057473f27a6c905476afd57cae59753b 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
++++ b/bukkit/src/main/java/me/pikamug/quests/BukkitQuestsPlugin.java
+@@ -71,6 +71,7 @@ import java.io.OutputStream;
+ import java.net.URISyntaxException;
+ import java.util.*;
+ import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ 
+@@ -205,7 +206,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         getServer().getPluginManager().registerEvents(getPlayerListener(), this);
+         if (configSettings.getStrictPlayerMovement() > 0) {
+             final long ticks = configSettings.getStrictPlayerMovement() * 20L;
+-            getServer().getScheduler().scheduleSyncRepeatingTask(this, getPlayerMoveThread(), ticks, ticks);
++            getServer().getGlobalRegionScheduler().runAtFixedRate(this, task -> getPlayerMoveThread().run(), ticks, ticks);
+         }
+         if (depends.getPartyProvider() != null) {
+             getServer().getPluginManager().registerEvents(getUniteListener(), this);
+@@ -232,11 +233,12 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         for (final Player p : getServer().getOnlinePlayers()) {
+             getQuester(p.getUniqueId()).saveData();
+         }
+-        getServer().getScheduler().cancelTasks(this);
+         getLogger().info("Closing storage...");
+         if (storage != null) {
+             storage.close();
+         }
++        Bukkit.getAsyncScheduler().cancelTasks(this);
++        Bukkit.getGlobalRegionScheduler().cancelTasks(this);
+     }
+ 
+     @SuppressWarnings("unused")
+@@ -621,7 +623,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+      * At startup, this lets soft-depends (namely Citizens) fully load first
+      */
+     private void delayLoadQuestInfo() {
+-        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
++        getServer().getGlobalRegionScheduler().runDelayed(this, (task) -> {
+             conditionLoader.init();
+             actionLoader.init();
+             questLoader.init();
+@@ -630,14 +632,16 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+             customLoader.init();
+             questLoader.importQuests();
+             if (getConfigSettings().canDisableCommandFeedback()) {
+-                try {
+-                    // Since 1.21.11
+-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule minecraft:send_command_feedback false");
+-                } catch (final CommandException e) {
+-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule sendCommandFeedback false");
+-                }
++                getServer().getGlobalRegionScheduler().execute(this, () ->{
++                    try {
++                        // Since 1.21.11
++                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule minecraft:send_command_feedback false");
++                    } catch (final CommandException e) {
++                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule sendCommandFeedback false");
++                    }
++                });
+             }
+-            getServer().getScheduler().runTaskAsynchronously(this, () -> {
++            getServer().getAsyncScheduler().runNow(this, (scheduledTask) -> {
+                 try {
+                     questers = storage.loadOfflineQuesters().get();
+                 } catch (final Exception e) {
+@@ -645,7 +649,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+                 }
+             });
+         }, 5L);
+-        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
++        getServer().getAsyncScheduler().runDelayed(this, (scheduledTask) -> {
+             // Workaround for issues with the Compass on fast join
+             for (final Player p : getServer().getOnlinePlayers()) {
+                 final Quester quester = new BukkitQuester(BukkitQuestsPlugin.this, p.getUniqueId());
+@@ -656,7 +660,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+                 questers.put(p.getUniqueId(), quester);
+             }
+             loading = false;
+-        }, 60L);
++        }, 60L * 50L, java.util.concurrent.TimeUnit.MILLISECONDS);
+     }
+ 
+     /**
+@@ -671,7 +675,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+         }
+         loading = true;
+         reloadConfig();
+-        getServer().getScheduler().runTaskAsynchronously(this, () -> {
++        getServer().getAsyncScheduler().runNow(this, (scheduledTask) -> {
+             try {
+                 final long startTime = System.currentTimeMillis();
+                 if (getConfigSettings().getConsoleLogging() > 3) {
+@@ -723,7 +727,7 @@ public class BukkitQuestsPlugin extends JavaPlugin implements Quests {
+             exception.printStackTrace();
+         }
+         if (callback != null) {
+-            getServer().getScheduler().runTask(BukkitQuestsPlugin.this, () -> {
++            getServer().getGlobalRegionScheduler().run(BukkitQuestsPlugin.this, (task) -> {
+                 loading = false;
+                 callback.execute(result);
+ 
+diff --git a/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java b/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+index 1c6b1770f47ff81a70b71cd653b8095bfb84faf7..1d84f5b8ede49c30f2477eca42ebd74112fa156c 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
++++ b/bukkit/src/main/java/me/pikamug/quests/actions/BukkitAction.java
+@@ -10,6 +10,7 @@
+ 
+ package me.pikamug.quests.actions;
+ 
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+ import me.pikamug.quests.BukkitQuestsPlugin;
+ import me.pikamug.quests.entity.QuestMob;
+ import me.pikamug.quests.player.BukkitQuester;
+@@ -405,17 +406,17 @@ public class BukkitAction implements Action {
+             final List<Integer> toNotify = Arrays.asList(60, 30, 10, 5, 4, 3, 2, 1);
+             for (final int seconds : toNotify) {
+                 if (timer > seconds) {
+-                    quester.getTimers().put(new BukkitActionTimer(quester, quest, seconds)
+-                            .runTaskLater(plugin, (timer - seconds) * 20L).getTaskId(), quest);
++                    quester.getTimers().put(new BukkitActionTimer(player, quester, quest, seconds)
++                            .runDelayed(plugin, (timer - seconds) * 20L), quest);
+                 }
+             }
+-            quester.getTimers().put(new BukkitActionTimer(quester, quest, 0)
+-                    .runTaskLater(plugin, timer * 20L).getTaskId(), quest);
++            quester.getTimers().put(new BukkitActionTimer(player, quester, quest, 0)
++                    .runDelayed(plugin, timer * 20L), quest);
+         }
+         if (cancelTimer) {
+-            for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++            for (final Map.Entry<ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+                 if (entry.getValue().getId().equals(quest.getId())) {
+-                    plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                    entry.getKey().cancel();
+                     quester.getTimers().remove(entry.getKey());
+                 }
+             }
+diff --git a/bukkit/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java b/bukkit/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
+index efb5d4b50353dc1efcc73e8ba6e0eb0b7f212851..02b535ef0f9a9f9ce1901127be8657d6019d37f1 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
++++ b/bukkit/src/main/java/me/pikamug/quests/commands/quest/BukkitQuestCommandHandler.java
+@@ -39,10 +39,9 @@ public class BukkitQuestCommandHandler {
+     }
+ 
+     public boolean check(final CommandSender cs, final String[] args) {
+-        if (cs instanceof Player) {
++        if (cs instanceof Player player) {
+             if (cs.hasPermission("quests.quest")) {
+                 if (args.length == 0) {
+-                    final Player player = (Player) cs;
+                     final Quester quester = plugin.getQuester(player.getUniqueId());
+                     if (!quester.getCurrentQuests().isEmpty()) {
+                         final int[] ticks = {1};
+@@ -53,7 +52,7 @@ public class BukkitQuestCommandHandler {
+                                     || quester.getStageTime(q) < 0L) {
+                                 final String msg = BukkitLang.get(player, "questObjectivesTitle")
+                                         .replace("<quest>", q.getName());
+-                                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
++                                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, (task) -> {
+                                     BukkitLang.send(player, ChatColor.GOLD + msg);
+                                     quester.showCurrentObjectives(q, quester, false);
+                                     ticks[0]++;
+@@ -63,7 +62,7 @@ public class BukkitQuestCommandHandler {
+                                 final String msg = ChatColor.YELLOW + "(" + BukkitLang.get(player, "delay") + ") "
+                                         + ChatColor.RED + BukkitLang.get(player, "plnTooEarly")
+                                         .replace("<quest>", q.getName().replace("<time>", BukkitMiscUtil.getTime(time)));
+-                                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
++                                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, (task) -> {
+                                     BukkitLang.send(player, msg);
+                                     ticks[0]++;
+                                 }, ticks[0]);
+diff --git a/bukkit/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java b/bukkit/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
+index c862c12d987b8844ecb18e238873df8ddb4cbd93..290dcdeabcba5afd241eea4eb211b6d2b8616a53 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
++++ b/bukkit/src/main/java/me/pikamug/quests/commands/quests/subcommands/BukkitQuestsTopCommand.java
+@@ -79,7 +79,7 @@ public class BukkitQuestsTopCommand extends BukkitQuestsSubCommand {
+                         .replace("<greatest>", String.valueOf(plugin.getConfigSettings().getTopLimit())));
+                 return;
+             }
+-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
++            Bukkit.getAsyncScheduler().runNow(plugin, (scheduledTask) -> {
+                 final Map<String, Integer> questPoints = plugin.getOfflineQuesters().stream()
+                         .collect(Collectors.toMap(Quester::getLastKnownName, Quester::getQuestPoints));
+                 final LinkedHashMap<String, Integer> sortedMap = (LinkedHashMap<String, Integer>) sort(questPoints);
+diff --git a/bukkit/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java b/bukkit/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+index e936ce2dc116f7a3b10f9b429a191258dbf72c2e..94117c147735c02b10e043ad2c49ea85505e573e 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
++++ b/bukkit/src/main/java/me/pikamug/quests/listeners/BukkitPlayerListener.java
+@@ -10,6 +10,7 @@
+ 
+ package me.pikamug.quests.listeners;
+ 
++import fr.euphyllia.localelib.FoliaRunnable;
+ import me.pikamug.quests.BukkitQuestsPlugin;
+ import me.pikamug.quests.convo.misc.QuestAcceptPrompt;
+ import me.pikamug.quests.enums.ObjectiveType;
+@@ -71,6 +72,7 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.TimeUnit;
+ 
+ public class BukkitPlayerListener implements Listener {
+ 
+@@ -138,8 +140,8 @@ public class BukkitPlayerListener implements Listener {
+                                     e.printStackTrace();
+                                 }
+                             }
+-                            plugin.getServer().getScheduler().runTaskLater(plugin, () ->
+-                                    event.getWhoClicked().closeInventory(), 1L);
++                            player.getScheduler().runDelayed(plugin, (task) ->
++                                    event.getWhoClicked().closeInventory(), null, 1L);
+                             return;
+                         }
+                     }
+@@ -519,13 +521,13 @@ public class BukkitPlayerListener implements Listener {
+                         final String chat = event.getMessage();
+                         for (final String s : currentStage.getChatActions().keySet()) {
+                             if (s.equalsIgnoreCase(chat)) {
+-                                new BukkitRunnable() {
++                                new FoliaRunnable(event.getPlayer().getScheduler(), null) {
+                                     @Override
+                                     public void run() {
+                                         currentStage.getChatActions().get(s).fire(quester, quest);
+                                     }
+ 
+-                                }.runTask(this.plugin);
++                                }.run(this.plugin);
+                             }
+                         }
+                     }
+@@ -865,7 +867,7 @@ public class BukkitPlayerListener implements Listener {
+         final Player player = event.getPlayer();
+         if (plugin.canUseQuests(player.getUniqueId())) {
+             final Quester quester = plugin.getQuester(player.getUniqueId());
+-            Bukkit.getScheduler().runTaskLater(plugin, quester::findCompassTarget, 10);
++            player.getScheduler().execute(plugin, quester::findCompassTarget, null, 10);
+         }
+     }
+ 
+@@ -888,7 +890,7 @@ public class BukkitPlayerListener implements Listener {
+                 noobCheck.saveData();
+             }
+ 
+-            plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
++            plugin.getServer().getAsyncScheduler().runDelayed(plugin, (task) -> {
+                 final CompletableFuture<Quester> cf = plugin.getStorage().loadQuester(player.getUniqueId());
+                 try {
+                     final Quester quester = cf.get();
+@@ -910,7 +912,7 @@ public class BukkitPlayerListener implements Listener {
+                             quester.startStageTimer(quest);
+                         }
+                     }
+-                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
++                    plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, (task1) -> {
+                         boolean alreadyHasAtLeastOneGlobalQuest = false;
+                         for (final Quest cq : quester.getCurrentQuests().keySet()) {
+                             if (cq.getOptions().canGiveGloballyAtLogin()) {
+@@ -951,7 +953,7 @@ public class BukkitPlayerListener implements Listener {
+                 } catch (final Exception e) {
+                     e.printStackTrace();
+                 }
+-            }, 20L);
++            }, 20L * 50L, TimeUnit.MILLISECONDS);
+         }
+     }
+ 
+@@ -1014,7 +1016,7 @@ public class BukkitPlayerListener implements Listener {
+      * @since 3.8.2
+      */
+     public void playerMove(final UUID uuid, final Location location) {
+-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
++        plugin.getServer().getAsyncScheduler().runNow(plugin, (task) -> {
+             final BukkitQuester quester = plugin.getQuester(uuid);
+             if (quester != null) {
+                 if (plugin.canUseQuests(uuid)) {
+@@ -1028,7 +1030,7 @@ public class BukkitPlayerListener implements Listener {
+                         if (quester.getCurrentQuests().containsKey(quest)) {
+                             if (quester.getCurrentStage(quest) != null
+                                     && quester.getCurrentStage(quest).containsObjective(type)) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> quester
++                                plugin.getServer().getGlobalRegionScheduler().run(plugin, (task1) -> quester
+                                         .reachLocation(quest, location));
+                             }
+                         }
+@@ -1036,7 +1038,7 @@ public class BukkitPlayerListener implements Listener {
+                         dispatchedQuestIDs.addAll(quester.dispatchMultiplayerEverything(quest, type,
+                                 (final Quester q, final Quest cq) -> {
+                             if (!dispatchedQuestIDs.contains(cq.getId())) {
+-                                plugin.getServer().getScheduler().runTask(plugin, () -> ((BukkitQuester) q)
++                                plugin.getServer().getGlobalRegionScheduler().run(plugin, (task1) -> ((BukkitQuester) q)
+                                         .reachLocation(cq, location));
+                             }
+                             return null;
+diff --git a/bukkit/src/main/java/me/pikamug/quests/listeners/npc/BukkitZnpcsPlusListener.java b/bukkit/src/main/java/me/pikamug/quests/listeners/npc/BukkitZnpcsPlusListener.java
+index ac952bf2df09b2a12c3e3017f2685d09cba9973e..9d885d5d5c1f7c3dcc14d5a06c38e1003b16d6f5 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/listeners/npc/BukkitZnpcsPlusListener.java
++++ b/bukkit/src/main/java/me/pikamug/quests/listeners/npc/BukkitZnpcsPlusListener.java
+@@ -31,12 +31,12 @@ public class BukkitZnpcsPlusListener extends BukkitNpcListener {
+         UUID npcUUID = event.getNpc() != null ? event.getNpc().getUuid() : null;
+ 
+         // Needed because the NpcInteractEvent is fired async
+-        plugin.getServer().getScheduler().runTask(plugin, () -> {
++        player.getScheduler().run(plugin, (task) -> {
+             if (event.getClickType().equals(InteractionType.LEFT_CLICK)) {
+                 interactNPC(player, npcUUID, ClickType.LEFT);
+             } else if (event.getClickType().equals(InteractionType.RIGHT_CLICK)) {
+                 interactNPC(player, npcUUID, ClickType.RIGHT);
+             }
+-        });
++        }, null);
+     }
+ }
+diff --git a/bukkit/src/main/java/me/pikamug/quests/player/BukkitQuester.java b/bukkit/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+index d51ea7538b34e7c743b6fea4ac0d3143c8d29307..7713a120fa1dde2cfd1b4912382121bf42a9e22a 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/player/BukkitQuester.java
++++ b/bukkit/src/main/java/me/pikamug/quests/player/BukkitQuester.java
+@@ -106,7 +106,7 @@ public class BukkitQuester implements Quester {
+     protected int questPoints = 0;
+     private String compassTargetQuestId;
+     private long lastNotifiedCondition = 0L;
+-    protected ConcurrentHashMap<Integer, Quest> timers = new ConcurrentHashMap<>();
++    protected ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers = new ConcurrentHashMap<>();
+     protected ConcurrentHashMap<Quest, Integer> currentQuests = new ConcurrentHashMap<Quest, Integer>() {
+ 
+         private static final long serialVersionUID = 6361484975823846780L;
+@@ -346,17 +346,17 @@ public class BukkitQuester implements Quester {
+     }
+ 
+     @Override
+-    public ConcurrentHashMap<Integer, Quest> getTimers() {
++    public ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> getTimers() {
+         return timers;
+     }
+ 
+     @Override
+-    public void setTimers(final ConcurrentHashMap<Integer, Quest> timers) {
++    public void setTimers(final ConcurrentHashMap<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> timers) {
+         this.timers = timers;
+     }
+ 
+     @Override
+-    public void removeTimer(final Integer timerId) {
++    public void removeTimer(final io.papermc.paper.threadedregions.scheduler.ScheduledTask timerId) {
+         this.timers.remove(timerId);
+     }
+ 
+@@ -3306,7 +3306,7 @@ public class BukkitQuester implements Quester {
+     public void sayPassword(final Quest quest, final AsyncPlayerChatEvent evt) {
+         final ObjectiveType type = ObjectiveType.PASSWORD;
+         final Set<String> dispatchedQuestIDs = new HashSet<>();
+-        plugin.getServer().getScheduler().runTask(plugin, () -> {
++        plugin.getServer().getGlobalRegionScheduler().run(plugin, (task) -> {
+             final BukkitQuesterPreUpdateObjectiveEvent preEvent = new BukkitQuesterPreUpdateObjectiveEvent(this, quest,
+                     new BukkitObjective(type, null, 1, 1));
+             plugin.getServer().getPluginManager().callEvent(preEvent);
+@@ -3318,7 +3318,7 @@ public class BukkitQuester implements Quester {
+                     final String display = getCurrentStage(quest).getPasswordDisplays().get(index);
+                     bukkitQuestProgress.passwordsSaid.set(index, true);
+ 
+-                    plugin.getServer().getScheduler().runTask(plugin, () -> finishObjective(quest,
++                    plugin.getServer().getGlobalRegionScheduler().run(plugin, (task1) -> finishObjective(quest,
+                             new BukkitObjective(type, null, BlockItemStack.of(Material.DIRT, 1, (short) 0),
+                             BlockItemStack.of(Material.DIRT, 1, (short) 0)), null, null, null, null, null, display, null));
+ 
+@@ -4148,9 +4148,9 @@ public class BukkitQuester implements Quester {
+             currentQuests.remove(quest);
+             questProgress.remove(quest);
+             if (!timers.isEmpty()) {
+-                for (final Map.Entry<Integer, Quest> entry : timers.entrySet()) {
++                for (final Map.Entry<io.papermc.paper.threadedregions.scheduler.ScheduledTask, Quest> entry : timers.entrySet()) {
+                     if (entry.getValue().getName().equals(quest.getName())) {
+-                        plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                        entry.getKey().cancel();
+                         timers.remove(entry.getKey());
+                     }
+                 }
+@@ -4284,7 +4284,7 @@ public class BukkitQuester implements Quester {
+         if (getPlayer() == null || !getPlayer().hasPermission("quests.compass")) {
+             return;
+         }
+-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
++        Bukkit.getAsyncScheduler().runNow(plugin, (task) -> {
+             final LinkedList<String> list = currentQuests.keySet().stream()
+                     .sorted(Comparator.comparing(Quest::getName)).map(Quest::getId)
+                     .collect(Collectors.toCollection(LinkedList::new));
+@@ -4585,7 +4585,7 @@ public class BukkitQuester implements Quester {
+                         .replace("<quest>", quest.getName()));
+                 }
+                 if (stage.getFailAction() != null) {
+-                    plugin.getServer().getScheduler().runTask(plugin, () -> stage.getFailAction().fire(this, quest));
++                    plugin.getServer().getGlobalRegionScheduler().run(plugin, (task) -> stage.getFailAction().fire(this, quest));
+                 }
+                 hardQuit(quest);
+             } else if (giveReason) {
+diff --git a/bukkit/src/main/java/me/pikamug/quests/quests/BukkitQuest.java b/bukkit/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+index 6a2a3db82f29600a65be2c1e46cce0569dfcca94..ebbccbb2fdc1eee9a1bb2deb92235a2f9fe7d97f 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
++++ b/bukkit/src/main/java/me/pikamug/quests/quests/BukkitQuest.java
+@@ -16,6 +16,7 @@ import com.gmail.nossr50.config.Config;
+ import com.gmail.nossr50.datatypes.skills.SkillType;
+ import com.gmail.nossr50.util.player.UserManager;
+ import com.herocraftonline.heroes.characters.Hero;
++import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+ import me.clip.placeholderapi.PlaceholderAPI;
+ import me.pikamug.quests.BukkitQuestsPlugin;
+ import me.pikamug.quests.actions.Action;
+@@ -408,7 +409,7 @@ public class BukkitQuest implements Quest {
+             return false;
+         }
+         final Quest quest = this;
+-        Bukkit.getScheduler().runTask(plugin, () -> {
++        Bukkit.getGlobalRegionScheduler().run(plugin, (task) -> {
+             Location targetLocation = null;
+             if (stage.getNpcsToInteract() != null && !stage.getNpcsToInteract().isEmpty()) {
+                 targetLocation = plugin.getDependencies().getNpcLocation(stage.getNpcsToInteract().getFirst());
+@@ -530,15 +531,18 @@ public class BukkitQuest implements Quest {
+                     return;
+                 }
+                 if (targetLocation.getWorld().getName().equals(q.getPlayer().getWorld().getName())) {
+-                    final Location lockedTarget = new Location(targetLocation.getWorld(), targetLocation.getX(),
+-                            targetLocation.getY(), targetLocation.getZ());
+-                    final BukkitQuestUpdateCompassEvent event = new BukkitQuestUpdateCompassEvent(quest, q, lockedTarget);
+-                    plugin.getServer().getPluginManager().callEvent(event);
+-                    if (event.isCancelled()) {
+-                        return;
+-                    }
+-                    q.setCompassTarget(this);
+-                    q.getPlayer().setCompassTarget(lockedTarget);
++                    Location finalTargetLocation = targetLocation;
++                    q.getPlayer().getScheduler().run(plugin, task1 -> {
++                        final Location lockedTarget = new Location(finalTargetLocation.getWorld(), finalTargetLocation.getX(),
++                                finalTargetLocation.getY(), finalTargetLocation.getZ());
++                        final BukkitQuestUpdateCompassEvent event = new BukkitQuestUpdateCompassEvent(quest, q, lockedTarget);
++                        plugin.getServer().getPluginManager().callEvent(event);
++                        if (event.isCancelled()) {
++                            return;
++                        }
++                        q.setCompassTarget(this);
++                        q.getPlayer().setCompassTarget(lockedTarget);
++                    }, null);
+                 }
+             }
+         });
+@@ -735,9 +739,9 @@ public class BukkitQuest implements Quest {
+         final Collection<Quest> completedQuests = quester.getCompletedQuests();
+         completedQuests.add(this);
+         quester.setCompletedQuests(completedQuests);
+-        for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++        for (final Entry<ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+             if (entry.getValue().getName().equals(getName())) {
+-                plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                entry.getKey().cancel();
+                 quester.getTimers().remove(entry.getKey());
+             }
+         }
+@@ -745,7 +749,7 @@ public class BukkitQuest implements Quest {
+             final Player p = (Player)player;
+             final String[] ps = BukkitConfigUtil.parseStringWithPossibleLineBreaks(ChatColor.AQUA
+                     + finished, this, p);
+-            Bukkit.getScheduler().runTaskLater(plugin, () -> p.sendMessage(ps), 40);
++            p.getScheduler().runDelayed(plugin, (task) -> p.sendMessage(ps), null, 40);
+         }
+         if (planner.getCooldown() > -1) {
+             quester.getCompletedTimes().put(this, System.currentTimeMillis());
+@@ -796,7 +800,7 @@ public class BukkitQuest implements Quest {
+             if (Bukkit.isPrimaryThread()) {
+                 Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+             } else {
+-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
++                Bukkit.getGlobalRegionScheduler().run(plugin, (task) ->
+                         Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command));
+             }
+             issuedReward = true;
+@@ -1113,9 +1117,9 @@ public class BukkitQuest implements Quest {
+         if (preEvent.isCancelled()) {
+             return;
+         }
+-        for (final Map.Entry<Integer, Quest> entry : quester.getTimers().entrySet()) {
++        for (final Map.Entry<ScheduledTask, Quest> entry : quester.getTimers().entrySet()) {
+             if (entry.getValue().getId().equals(getId())) {
+-                plugin.getServer().getScheduler().cancelTask(entry.getKey());
++                entry.getKey().cancel();
+                 quester.getTimers().remove(entry.getKey());
+             }
+         }
+diff --git a/bukkit/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java b/bukkit/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
+index 6754ac94d823cd1aa4d06cb0eb16902277984235..adbe5247b48cd7d11af7a32cb9991d43c21e234e 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
++++ b/bukkit/src/main/java/me/pikamug/quests/statistics/BukkitMetrics.java
+@@ -96,7 +96,7 @@ public class BukkitMetrics {
+             enabled,
+             this::appendPlatformData,
+             this::appendServiceData,
+-            submitDataTask -> Bukkit.getScheduler().runTask(plugin, submitDataTask),
++            submitDataTask -> Bukkit.getGlobalRegionScheduler().execute(plugin, submitDataTask),
+             plugin::isEnabled,
+             (message, error) -> this.plugin.getLogger().log(Level.WARNING, message, error),
+             (message) -> this.plugin.getLogger().log(Level.INFO, message),
+diff --git a/bukkit/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java b/bukkit/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+index e08d8d174b2250997d424049af96901a7480440e..72928ef1d252124f34250aa4181b801cd3224f37 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
++++ b/bukkit/src/main/java/me/pikamug/quests/tasks/BukkitActionTimer.java
+@@ -10,21 +10,23 @@
+ 
+ package me.pikamug.quests.tasks;
+ 
++import fr.euphyllia.localelib.FoliaRunnable;
+ import me.pikamug.quests.player.BukkitQuester;
+ import me.pikamug.quests.player.Quester;
+ import me.pikamug.quests.quests.Quest;
+ import me.pikamug.quests.util.BukkitLang;
+ import me.pikamug.quests.util.BukkitMiscUtil;
+ import org.bukkit.ChatColor;
+-import org.bukkit.scheduler.BukkitRunnable;
++import org.bukkit.entity.Player;
+ 
+-public class BukkitActionTimer extends BukkitRunnable {
++public class BukkitActionTimer extends FoliaRunnable {
+ 
+     private final Quester quester;
+     private final Quest quest;
+     private final int time;
+ 
+-    public BukkitActionTimer(final Quester quester, final Quest quest, final int time) {
++    public BukkitActionTimer(final Player player, final Quester quester, final Quest quest, final int time) {
++        super(player.getScheduler(), null);
+         this.quester = quester;
+         this.quest = quest;
+         this.time = time;
+@@ -33,7 +35,7 @@ public class BukkitActionTimer extends BukkitRunnable {
+     @Override
+     public void run() {
+         final BukkitQuester q = (BukkitQuester) quester;
+-        q.removeTimer(getTaskId());
++        q.removeTimer(this.getScheduledTask());
+         if (time < 1) {
+             quest.failQuest(q, false);
+             q.updateJournal();
+diff --git a/bukkit/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java b/bukkit/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
+index d265a7c4dda26f2e68cfc925e2f657639b914ecf..8bd4f6f8e46462b900c5acad1e4810ce7d753055 100644
+--- a/bukkit/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
++++ b/bukkit/src/main/java/me/pikamug/quests/util/BukkitUpdateChecker.java
+@@ -31,7 +31,7 @@ public class BukkitUpdateChecker {
+ 
+     public void getVersion(final Consumer<String> consumer) {
+         if (plugin.getConfigSettings().canUpdateCheck()) {
+-            Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
++            Bukkit.getAsyncScheduler().runNow(this.plugin, (task) -> {
+                 try (final InputStream inputStream = new URL("https://api.spigotmc.org/legacy/update.php?resource="
+                         + this.resourceId).openStream(); final Scanner scanner = new Scanner(inputStream)) {
+                     if (scanner.hasNext()) {
