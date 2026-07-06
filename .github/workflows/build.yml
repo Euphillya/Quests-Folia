@@ -10,52 +10,39 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Grant execute permission to script
-      run: bash -c "chmod +x script.sh"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-    - name: Install LocaleLib for Folia
-      shell: bash
-      run: |
-       git clone https://github.com/Euphillya/LocaleLib-Folia
-       cd LocaleLib-Folia
-       mvn clean compile package
-       mvn install:install-file \
-         -Dfile="target/LocaleLib-4.1.2-Folia.jar" \
-         -DgroupId="me.pikamug.localelib" \
-         -DartifactId="LocaleLib" \
-         -Dversion="4.1.2-Folia" \
-         -Dpackaging="jar"
-       cd ..
+      - name: Configure git
+        run: |
+          git config --global am.keepcr true
+          git config --global core.autocrlf false
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Github Actions"
 
-    - name: Update upstream and apply patches
-      shell: bash
-      run: |
-        git config --global user.email "action@github.com"
-        git config --global user.name "Action Github"
-        ./script.sh updateUpstream
-        ./script.sh applyPatches
+      - name: Apply patches
+        run: ./gradlew applyPatches --stacktrace
 
-    - name: Build with Maven
-      shell: bash
-      run: |
-        cd Quests-Patchs
-        mvn clean compile install
+      - name: Build Quests
+        run: ./gradlew buildQuests --stacktrace
 
-    - name: Upload Jar file
-      uses: actions/upload-artifact@v4
-      with:
-        name: compiled-jar
-        path: Quests-Patchs/dist/target/*.jar
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quests-Folia
+          path: Quests-Patched/dist/build/libs/Quests-*.jar
+          if-no-files-found: error
